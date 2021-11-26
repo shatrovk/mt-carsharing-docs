@@ -1,0 +1,532 @@
+swagger: "2.0"
+info:
+  description: |
+    <p>Документ описывает интеграцию серверной части приложения Московский Транспорт (МТ) и сервисом каршеринга.</p>
+    <p>Данный API предстоит реализовать сервису каршеринга.</p>
+    <p>Доступ к API каршеринга должен быть ограничен списоком разрешённых IP адресов МТ.</p>
+    <p>Доступ к API на стороне МТ будет ограничен списоком IP адресов каршеринг сервисов, а также уникальным API ключом для каждого каршеринга. Данный API ключ необходимо передавать в HTTP заголовке Api-Key.</p>
+    <p>Для работы с API каршеринга, МТ должен получить API токен для каждого пользователя (см. ниже метод POST /token). Токен передаётся в каждый метод в HTTP заголовке User-Token.</p>
+    <h2>&#9888; Вопросы на проработку</h2>
+    <p>
+      <ol>
+      <li>Согласовать список возможных причин, по которым пользователь не может забронировать текущий автомобиль (поле forbiddenRentReason)</li>
+      <li>Требуется согласовать список возможных ошибок с операторами при брони автомобиля (ErrorRideCreationEntity)</li>
+    </ol>
+    </p>
+  title: "MT + сервисы каршеринга"
+tags:
+  - name: "carsharing"
+    description: "API методы реализованные на стороне каршеринг-сервиса"
+  - name: "mt"
+    description: "API методы реализованные на стороне МТ"
+schemes:
+  - "https"
+paths:
+  /token:
+    post:
+      tags:
+        - "carsharing"
+      summary: "Получение авторизационного токена для работы с API"
+      description: |
+        <p>Метод принимает номер телефона пользователя, который намеревается начать работу с системой каршеринга. Номер телефона заранее был верифицирован СМС сообщением на стороне МТ.</p>
+        <p>При наличии авторизационных систем на стороне каршеринга возможна передача токена, который будет получен из этой системы (например, Яндекс.Паспорта).</p>
+        <p>В случае, если на этот номер телефона есть зарегистрированный пользователь и он имеет права на использования сервиса - метод возвращает API токен, который будет использован при обращении к другим методах.</p>
+        <p>Метод может вернуть ошибки, в случа если:
+        <ul>
+          <li>Пользователь не зарегистрирован в системе (код ошибки userNotFound)</li>
+          <li>Пользователь не подтверждён - пользователю требуется пройти идентификацию документов или дождаться её завершения (код ошибки needConfirmation)</li>
+          <li>Пользователь заблокирован (код ошибки blocked)</li>
+        </ul>
+        </p>
+      operationId: "tokenCreate"
+      consumes:
+        - "application/json"
+      produces:
+        - "application/json"
+      parameters:
+        - in: "body"
+          name: "body"
+          description: "Данные для получения токена"
+          required: true
+          schema:
+            $ref: "#/definitions/TokenDto"
+      responses:
+        "200":
+          description: "Успех операции"
+          schema:
+            $ref: "#/definitions/TokenEntity"
+        "400":
+          description: "Ошибка при выдаче токена"
+          schema:
+            $ref: "#/definitions/ErrorEntity"
+
+  /policy:
+    get:
+      tags:
+        - "carsharing"
+      summary: "Получение текста политики конфиденциальности и правил сервиса"
+      description: |
+        <p>Метод возвращает текст правил и политики конфиденциальности сервиса, которые пользователь должен принять при работе с сервисом.</p>
+        <p>Предусмотрен параметр updatedAt, в котором необходимо передавать дату последнего обновления текста. Данное поле необходимо, чтобы получить повторное согласие пользователя в случае обновления правил.</p>
+      operationId: "policyGet"
+      consumes:
+        - "application/json"
+      produces:
+        - "application/json"
+      responses:
+        "200":
+          description: "Успех операции"
+          schema:
+            $ref: "#/definitions/PolicyEntity"
+      security:
+        - { }
+        - user_token: [ ]
+
+  /user:
+    get:
+      tags:
+        - "carsharing"
+      summary: "Информация об авторизованном пользователе"
+      description: ""
+      operationId: "userGet"
+      consumes:
+        - "application/json"
+      produces:
+        - "application/json"
+      responses:
+        "200":
+          description: "Успех операции"
+          schema:
+            $ref: "#/definitions/UserDataEntity"
+      security:
+        - user_token: [ ]
+
+  /car/{id}:
+    get:
+      tags:
+        - "carsharing"
+      summary: "Получение информации об автомобиле"
+      description: |
+        <p>Метод используется для вывода информации об автомобиле и доступных тарифах для него.</p>
+        <p>Метод вызывается в момент открытии пользователем карточки автомобиля.</p>
+        <p>Метод может вызываться без передачи авторизационного токена - в этом случае информация
+        должна возвращаться для неавторизованного пользователя. Для такого пользователя
+        допустимо возвращении стоимости в различном диапазоне (например, стоимость минуты поездки от 7 до 10 рублей).
+        Для авторизованного состояния для вывода стоимости будет использована минимальная граница (поле min).
+        </p>
+      operationId: "carGet"
+      parameters:
+        - name: "id"
+          in: "path"
+          description: "ID автомобиля из РНИС"
+          required: true
+          type: "integer"
+          format: "int64"
+      consumes:
+        - "application/json"
+      produces:
+        - "application/json"
+      responses:
+        "200":
+          description: "Успех операции"
+          schema:
+            $ref: "#/definitions/CarEntity"
+      security:
+        - { }
+        - user_token: [ ]
+
+  /ride:
+    post:
+      tags:
+        - "carsharing"
+      summary: "Бронирование автомобиля за пользователем"
+      description: |
+        <p>Метод брони автомобиля за пользователем.</p>
+        <p>В момент создания брони на стороне каршеринг сервиса
+        происходит холдирование средств за поездку. </p>
+        <p>
+
+        </p>
+      operationId: "rideCreate"
+      consumes:
+        - "application/json"
+      produces:
+        - "application/json"
+      parameters:
+        - in: "body"
+          name: "body"
+          description: "Данные для бронирования автомобиля"
+          required: true
+          schema:
+            $ref: "#/definitions/RideDto"
+      responses:
+        "200":
+          description: "Успех операции"
+          schema:
+            $ref: "#/definitions/RideEntity"
+        "400":
+          description: "Ошибка при бронировании"
+          schema:
+            $ref: "#/definitions/ErrorRideCreationEntity"
+      security:
+        - user_token: [ ]
+
+  /ride/{id}:
+    get:
+      tags:
+        - "carsharing"
+      summary: "Получение брони по ID"
+      description: "Метод возвращает сущность поездки, аналогичную методу создания."
+      operationId: "rideGet"
+      consumes:
+        - "application/json"
+      produces:
+        - "application/json"
+      parameters:
+        - name: "id"
+          in: "path"
+          description: "ID поездки"
+          required: true
+          type: "integer"
+      responses:
+        "200":
+          description: "Успех операции"
+          schema:
+            $ref: "#/definitions/RideEntity"
+        "404":
+          description: "Поездка с таким ID не найдена"
+      security:
+        - user_token: [ ]
+
+  /ride/{id}/cancel:
+    post:
+      tags:
+        - "carsharing"
+      summary: "Отмена брони"
+      description: "Метод возвращает сущность бронирования, аналогичную методу создания."
+      operationId: "rideCancel"
+      consumes:
+        - "application/json"
+      produces:
+        - "application/json"
+      parameters:
+        - name: "id"
+          in: "path"
+          description: "ID поездки"
+          required: true
+          type: "integer"
+        - in: "body"
+          name: "body"
+          description: "Данные для отмены брони"
+          required: true
+          schema:
+            $ref: "#/definitions/RideCancelDto"
+      responses:
+        "200":
+          description: "Успех операции"
+          schema:
+            $ref: "#/definitions/RideEntity"
+        "400":
+          description: "Ошибка при бронировании"
+          schema:
+            $ref: "#/definitions/ErrorRideCancelEntity"
+      security:
+        - user_token: [ ]
+
+  /ride-info:
+    post:
+      tags:
+        - "mt"
+      summary: "Оповещение об изменениях в поездке"
+      description: |
+        <p>Метод для оповещения изменении поездки на стороне сервиса каршеринга.</p>
+        <p>Адрес метода: <b>POST https://carsharing.moscowtransport.app/ride</b></p>
+        <p>Метод вызывается каршеринг-сервисом в момент изменения состояния поездки:
+          <ul>
+            <li>отмена поездки пользователем в приложении каршеринга;</li>
+            <li>начало поездки;</li>
+            <li>завершение поездки;</li>
+            <li>перевод автомобиля в режим ожидания.</li>
+          </ul>
+        </p>
+      operationId: "rideNotification"
+      consumes:
+        - "application/json"
+      produces:
+        - "application/json"
+      parameters:
+        - in: "body"
+          name: "body"
+          description: "Данные поездки"
+          required: true
+          schema:
+            $ref: "#/definitions/RideEntity"
+      responses:
+        "200":
+          description: "Успех операции"
+
+securityDefinitions:
+  user_token:
+    type: "apiKey"
+    description: "Токен пользователя, полученный в рамках вызова метода POST /token"
+    name: "UserToken"
+    in: "header"
+definitions:
+  TokenDto:
+    type: "object"
+    properties:
+      phoneNum:
+        type: "integer"
+        description: "Номер телефона в формате <i>70000000000</i> (только цифры)"
+
+  RideDto:
+    type: "object"
+    properties:
+      carId:
+        type: "integer"
+        description: "ID автомобиля"
+        format: "int64"
+      rateId:
+        type: "integer"
+        description: "ID тарифа"
+        format: "int64"
+      userLocation:
+        description: "Позиция пользователя в момент оформления заказа"
+        $ref: "#/definitions/LocationEntity"
+
+  RideCancelDto:
+    type: "object"
+    properties:
+      userLocation:
+        $ref: "#/definitions/LocationEntity"
+
+  RideEntity:
+    type: "object"
+    properties:
+      deepLink:
+        type: "string"
+        description: "Диплинк для перехода в приложение каршеринг сервиса"
+      specialMessage:
+        type: "string"
+        description: "Сообщение, которое можно вывести в карточке автомобиля при необходимости"
+      car:
+        description: "Информация об автомобиле"
+        $ref: "#/definitions/RideCarEntity"
+      waiting:
+        description: "Информация о времени ожидания"
+        $ref: "#/definitions/RideWaitingInfoEntity"
+      rate:
+        description: "Информация о используемом тарифе в рамках этой брони"
+        $ref: "#/definitions/RateEntity"
+      pointStart:
+        description: "Точка старта поездки (откуда поездка была начата - по сути является точкой автомобиля при брони)"
+        $ref: "#/definitions/LocationEntity"
+      pointFinish:
+        description: "Точка завершения поездки"
+        $ref: "#/definitions/LocationEntity"
+      createdAt:
+        type: "integer"
+        description: "Время создания брони в формате timestamp (секунды)"
+        example: 1637917148
+      startedAt:
+        type: "integer"
+        description: "Время старта поездки в формате timestamp (секунды)"
+        example: 1637917148
+      canceledAt:
+        type: "integer"
+        description: "Время отмены брони в формате timestamp (секунды)"
+        example: 1637917148
+      finishedAt:
+        type: "integer"
+        description: "Время завершения поездки в формате timestamp (секунды)"
+        example: 1637917148
+      features:
+        $ref: "#/definitions/RideFeaturesEntity"
+      status:
+        type: "string"
+        description: "Статус поездки"
+        enum:
+          - active
+          - waiting
+          - finished
+          - canceled
+
+  RideCarEntity:
+    type: "object"
+    properties:
+      id:
+        type: "integer"
+      fuelDistanceCapacity:
+        type: "number"
+        description: "Доступный километраж рассчитаный исходя из кол-ва топлива в автомобиле."
+        example: 12.4
+      position:
+        $ref: "#/definitions/LocationEntity"
+
+  RideFeaturesEntity:
+    type: "object"
+    properties:
+      warmup:
+        type: "boolean"
+        description: "Доступна возможность удалённого прогрева автомобиля"
+      wink:
+        type: "boolean"
+        description: "Доступна возможность удалённо «помигать» автомобилем"
+
+  RideWaitingInfoEntity:
+    type: "object"
+    properties:
+      freeUntil:
+        type: "integer"
+        description: "Время в формате timestamp (секунды) до которого время ожидания является бесплатным"
+      pricePerMin:
+        type: "number"
+        description: "Стоимость минуты ожидания в рублях"
+        example: 2.55
+
+  UserDataEntity:
+    type: "object"
+    properties:
+      fullEnsuranceEnable:
+        type: "boolean"
+        description: "Включена ли у пользователя полная страховка"
+      fullEnsuranceDescription:
+        type: "string"
+        description: "Текстовая информация, которая выводится у пользователя на плашке страховка"
+
+  TokenEntity:
+    type: "object"
+    properties:
+      token:
+        type: "string"
+        description: "16 символьный уникальный токен для пользвателя."
+      userData:
+        $ref: "#/definitions/UserDataEntity"
+
+  PolicyEntity:
+    type: "object"
+    properties:
+      content:
+        type: "string"
+        description: "Текст правил сервиса и политики конфиденциальности"
+      updatedAt:
+        type: "integer"
+        description: "Дата изменения правил в виде timestamp (секунды)"
+        example: 1637907497
+
+  CarEntity:
+    type: "object"
+    properties:
+      id:
+        type: "integer"
+        format: "int64"
+      fuelDistanceCapacity:
+        type: "number"
+        description: "Доступный километраж рассчитаный исходя из кол-ва топлива в автомобиле."
+        example: 12.4
+      carNum:
+        type: "string"
+        description: "Гос. номер автомобиля"
+        example: "у522уу799"
+      model:
+        type: "string"
+        description: "Марка + модель автомобиля"
+        example: "BMW 3-series"
+      forbiddenRentReason:
+        type: "string"
+        description: |
+          Код причины, по которой пользователю может быть недоступен этот автомобиль.
+          В случае, если автомобиль доступен для текущего пользователя значение поля
+          следует оставить в null. Возможные коды ошибок:
+          <i>low_driver_experience</i> - низкий стаж вождения
+          <i>other</i> - другие причины
+        enum:
+          - low_driver_experience
+          - other
+      rates:
+        type: "array"
+        description: "Доступные тарифы для автомобиля"
+        items:
+          $ref: "#/definitions/RateEntity"
+
+  RateEntity:
+    type: "object"
+    properties:
+      id:
+        type: "integer"
+        format: "int64"
+      name:
+        type: "string"
+        description: "Название тарифа"
+        example: "Поминутный"
+      fixed:
+        type: "boolean"
+        default: "Тариф для фиксированной поездки"
+      offerParking:
+        description: "Стоимость тарифа для режима ожидания"
+        $ref: "#/definitions/OfferRangeEntity"
+      offerRiding:
+        description: "Стоимость тарифа для режима поездки"
+        $ref: "#/definitions/OfferRangeEntity"
+
+  OfferRangeEntity:
+    type: "object"
+    properties:
+      min:
+        type: "number"
+        description: "Минимальная стоимость в рублях"
+        example: 7.99
+      max:
+        type: "number"
+        description: "Максимальная стоимость в рублях"
+        example: 10.99
+
+  LocationEntity:
+    type: "object"
+    properties:
+      lat:
+        type: "number"
+        description: "Широта"
+        example: 55.747534
+      lon:
+        type: "number"
+        description: "Долгота"
+        example: 37.626030
+
+  ErrorRideCreationEntity:
+    type: "object"
+    properties:
+      errorCode:
+        type: "string"
+        description: |
+          Код ошибки при бронировании автомобиля. Коды ошибок:
+          <ul>
+            <li>car_already_booking - машина уже забронирована другим пользователем;</li>
+            <li>user_has_ride - у пользователя уже есть активная поездка или бронь;</li>
+          </ul>
+        enum:
+          - car_already_booked
+          - user_has_ride
+
+  ErrorRideCancelEntity:
+    type: "object"
+    properties:
+      errorCode:
+        type: "string"
+        description: |
+          Код ошибки при бронировании автомобиля. Коды ошибок:
+          <ul>
+            <li>ride_not_found - поездка с таким ID не найдена;</li>
+            <li>ride_already_canceled - поездка с таким ID уже отменена.</li>
+            <li>ride_in_progress - поездку нельзя отменить, т.к. поездка в данный момент активна</li>
+          </ul>
+        enum:
+          - ride_not_found
+          - ride_already_canceled
+          - ride_in_progress
+
+  ErrorEntity:
+    type: "object"
+    properties:
+      errorCode:
+        type: "string"
