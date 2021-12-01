@@ -168,7 +168,8 @@
           "in" : "path",
           "description" : "ID поездки",
           "required" : true,
-          "type" : "integer"
+          "type" : "string",
+          "format" : "uuid"
         } ],
         "security" : [ {
           "user_token" : [ ]
@@ -367,7 +368,8 @@
       "type" : "object",
       "properties" : {
         "id" : {
-          "type" : "integer"
+          "type" : "string",
+          "format" : "uuid"
         },
         "fuelCapacity" : {
           "$ref" : "#/definitions/FuelCapacity"
@@ -461,8 +463,8 @@
       "type" : "object",
       "properties" : {
         "id" : {
-          "type" : "integer",
-          "format" : "int64"
+          "type" : "string",
+          "format" : "uuid"
         },
         "fuelCapacity" : {
           "$ref" : "#/definitions/FuelCapacity"
@@ -482,7 +484,7 @@
         },
         "forbiddenRentReason" : {
           "type" : "string",
-          "description" : "Код причины, по которой пользователю может быть недоступен этот автомобиль.\nВ случае, если автомобиль доступен для текущего пользователя значение поля\nследует оставить в null. Возможные коды ошибок:\n<i>low_driver_experience</i> - низкий стаж вождения\n<i>other</i> - другие причины\n",
+          "description" : "Код причины, по которой пользователю может быть недоступен этот автомобиль.\nВ случае, если автомобиль доступен для текущего пользователя значение поля\nследует оставить в null (или пользователь неавторизован). Возможные коды ошибок:\n<i>low_driver_experience</i> - низкий стаж вождения\n<i>other</i> - другие причины\n",
           "enum" : [ "low_driver_experience", "other" ]
         },
         "rates" : {
@@ -498,8 +500,8 @@
       "type" : "object",
       "properties" : {
         "id" : {
-          "type" : "integer",
-          "format" : "int64"
+          "type" : "string",
+          "format" : "uuid"
         },
         "name" : {
           "type" : "string",
