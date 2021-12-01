@@ -246,6 +246,8 @@ paths:
             <li>отмена поездки пользователем в приложении каршеринга;</li>
             <li>начало поездки;</li>
             <li>завершение поездки;</li>
+            <li>найден штраф по поездке;</li>
+            <li>оплачен штраф по поездке;</li>
             <li>перевод автомобиля в режим ожидания.</li>
           </ul>
         </p>
@@ -292,13 +294,13 @@ definitions:
         format: "int64"
       userLocation:
         description: "Позиция пользователя в момент оформления заказа"
-        $ref: "#/definitions/LocationEntity"
+        $ref: "#/definitions/LocationDto"
 
   RideCancelDto:
     type: "object"
     properties:
       userLocation:
-        $ref: "#/definitions/LocationEntity"
+        $ref: "#/definitions/LocationDto"
 
   RideEntity:
     type: "object"
@@ -309,6 +311,9 @@ definitions:
       specialMessage:
         type: "string"
         description: "Сообщение, которое можно вывести в карточке автомобиля при необходимости"
+      hasFines:
+        type: "boolean"
+        description: "Есть ли неоплаченные штрафы в этой поездке"
       car:
         description: "Информация об автомобиле"
         $ref: "#/definitions/RideCarEntity"
@@ -356,10 +361,8 @@ definitions:
     properties:
       id:
         type: "integer"
-      fuelDistanceCapacity:
-        type: "number"
-        description: "Доступный километраж рассчитаный исходя из кол-ва топлива в автомобиле."
-        example: 12.4
+      fuelCapacity:
+        $ref: "#/definitions/FuelCapacity"
       position:
         $ref: "#/definitions/LocationEntity"
 
@@ -414,16 +417,27 @@ definitions:
         description: "Дата изменения правил в виде timestamp (секунды)"
         example: 1637907497
 
+  FuelCapacity:
+    type: "object"
+    properties:
+      value:
+        type: "number"
+        description: "Доступный уровень топлива для автомобиля в километрах или %"
+        example: 12.4
+      oneOf:
+        type: "string"
+        enum:
+          - km
+          - percent
+
   CarEntity:
     type: "object"
     properties:
       id:
         type: "integer"
         format: "int64"
-      fuelDistanceCapacity:
-        type: "number"
-        description: "Доступный километраж рассчитаный исходя из кол-ва топлива в автомобиле."
-        example: 12.4
+      fuelCapacity:
+        $ref: "#/definitions/FuelCapacity"
       carNum:
         type: "string"
         description: "Гос. номер автомобиля"
@@ -432,6 +446,8 @@ definitions:
         type: "string"
         description: "Марка + модель автомобиля"
         example: "BMW 3-series"
+      geozones:
+        $ref: "#/definitions/CarZonesEntity"
       forbiddenRentReason:
         type: "string"
         description: |
@@ -481,9 +497,57 @@ definitions:
         description: "Максимальная стоимость в рублях"
         example: 10.99
 
+  CarZonesEntity:
+    type: "object"
+    properties:
+      availableForDriving:
+        type: "string"
+        description: "Геозона (encoded polyline) поездки - зона, в рамках которой можно совершать поездку"
+      forbiddenComplete:
+        type: "array"
+        items:
+          $ref: "#/definitions/ZoneEntity"
+        description: "Массив зон (encoded polyline), где запрещено завершать аренду (но можно перевести в режим ожидания)"
+      allowComplete:
+        type: "array"
+        items:
+          $ref: "#/definitions/ZoneEntity"
+        description: "Массив зон (encoded polyline), где можно переводить в режим ожидания и завершать аренду"
+
+  ZoneEntity:
+    type: "object"
+    properties:
+      polyline:
+        type: "string"
+        description: "encoded polyline"
+      specialMessage:
+        type: "string"
+        example: "Если поездка выйдет дешевле 1170Р, с карты дополнительно спишется недостающая разница"
+      shortName:
+        type: "string"
+        example: "VKO"
+      name:
+        type: "string"
+        example: "Внуково терминал А"
+
+  LocationDto:
+    type: "object"
+    properties:
+      lat:
+        type: "number"
+        description: "Широта"
+        example: 55.747534
+      lon:
+        type: "number"
+        description: "Долгота"
+        example: 37.626030
+
   LocationEntity:
     type: "object"
     properties:
+      address:
+        type: "string"
+        example: "Москва, ул. Тверская, д. 13"
       lat:
         type: "number"
         description: "Широта"
