@@ -29,6 +29,7 @@ paths:
       summary: "Получение авторизационного токена для работы с API"
       description: |
         <p>Метод принимает номер телефона пользователя, который намеревается начать работу с системой каршеринга. Номер телефона заранее был верифицирован СМС сообщением на стороне МТ.</p>
+        <p>Время жизни предоставленного токена - 14 дней, по истечению которых токен необходимо запросить заново.</p>
         <p>При наличии авторизационных систем на стороне каршеринга возможна передача токена, который будет получен из этой системы (например, Яндекс.Паспорта).</p>
         <p>В случае, если на этот номер телефона есть зарегистрированный пользователь и он имеет права на использования сервиса - метод возвращает API токен, который будет использован при обращении к другим методах.</p>
         <p>Метод может вернуть ошибки, в случа если:
@@ -82,30 +83,11 @@ paths:
         - { }
         - user_token: [ ]
 
-  /user:
-    get:
-      tags:
-        - "carsharing"
-      summary: "Информация об авторизованном пользователе"
-      description: ""
-      operationId: "userGet"
-      consumes:
-        - "application/json"
-      produces:
-        - "application/json"
-      responses:
-        "200":
-          description: "Успех операции"
-          schema:
-            $ref: "#/definitions/UserDataEntity"
-      security:
-        - user_token: [ ]
-
   /car/{id}:
     get:
       tags:
         - "carsharing"
-      summary: "Получение информации об автомобиле"
+      summary: Получение информации об автомобиле"
       description: |
         <p>Метод используется для вывода информации об автомобиле и доступных тарифах для него.</p>
         <p>Метод вызывается в момент открытии пользователем карточки автомобиля.</p>
@@ -120,13 +102,16 @@ paths:
           in: "path"
           description: "ID автомобиля из РНИС"
           required: true
-          type: "integer"
-          format: "int64"
+          type: "string"
       consumes:
         - "application/json"
       produces:
         - "application/json"
       responses:
+        "401":
+          description: |
+            Переданный токен невалиден. Ошибка возникает в случае если переданный
+            токен пользователя является невалидным (устарел или не существует).
         "200":
           description: "Успех операции"
           schema:
@@ -136,6 +121,30 @@ paths:
         - user_token: [ ]
 
   /ride:
+    get:
+      tags:
+        - "carsharing"
+      summary: "Возвращает информацию об активной поездке пользователя"
+      description: |
+        Метод возвращает сушность активной поездки пользователя. В случае, если поездка не найдена - метод
+        возвращает HTTP код 404.
+      operationId: "currentRideGet"
+      consumes:
+        - "application/json"
+      produces:
+        - "application/json"
+      responses:
+        "200":
+          description: "Успех операции"
+          schema:
+            $ref: "#/definitions/RideEntity"
+        "404":
+          description: "Активная поездка отсутствует"
+        "401":
+          description: "Переданный токен невалиден"
+      security:
+        - user_token: [ ]
+
     post:
       tags:
         - "carsharing"
@@ -144,9 +153,6 @@ paths:
         <p>Метод брони автомобиля за пользователем.</p>
         <p>В момент создания брони на стороне каршеринг сервиса
         происходит холдирование средств за поездку. </p>
-        <p>
-
-        </p>
       operationId: "rideCreate"
       consumes:
         - "application/json"
@@ -168,6 +174,8 @@ paths:
           description: "Ошибка при бронировании"
           schema:
             $ref: "#/definitions/ErrorRideCreationEntity"
+        "401":
+          description: "Переданный токен невалиден"
       security:
         - user_token: [ ]
 
@@ -194,8 +202,10 @@ paths:
           description: "Успех операции"
           schema:
             $ref: "#/definitions/RideEntity"
+        "401":
+          description: "Переданный токен невалиден"
         "404":
-          description: "Поездка с таким ID не найдена"
+          description: "Поездка с переданным ID не найдена"
       security:
         - user_token: [ ]
 
@@ -231,6 +241,37 @@ paths:
           description: "Ошибка при бронировании"
           schema:
             $ref: "#/definitions/ErrorRideCancelEntity"
+        "401":
+          description: "Переданный токен невалиден"
+      security:
+        - user_token: [ ]
+
+  /zone-set/{id}:
+    get:
+      tags:
+        - "carsharing"
+      summary: "Получение набора зон по ID"
+      description: |
+        Метод возвращает набор зон, в котором возможно совершить поездку, запрещённые и доступные для завершения аренды.
+      operationId: "zoneSetGet"
+      consumes:
+        - "application/json"
+      produces:
+        - "application/json"
+      parameters:
+        - name: "id"
+          in: "path"
+          description: "ID набора зон"
+          required: true
+          type: "string"
+          format: "uuid"
+      responses:
+        "200":
+          description: "Успех операции"
+          schema:
+            $ref: "#/definitions/AvailableZoneSetEntity"
+        "404":
+          description: "Набор зон с переданным ID не найден"
       security:
         - user_token: [ ]
 
@@ -306,15 +347,18 @@ definitions:
   RideEntity:
     type: "object"
     properties:
+      id:
+        description: "ID поездки"
+        type: "string"
+        format: "uuid"
       deepLink:
         type: "string"
         description: "Диплинк для перехода в приложение каршеринг сервиса"
       specialMessage:
         type: "string"
         description: "Сообщение, которое можно вывести в карточке автомобиля при необходимости"
-      hasFines:
-        type: "boolean"
-        description: "Есть ли неоплаченные штрафы в этой поездке"
+      finesDescription:
+        type: "string"
       car:
         description: "Информация об автомобиле"
         $ref: "#/definitions/RideCarEntity"
@@ -348,6 +392,18 @@ definitions:
         example: 1637917148
       features:
         $ref: "#/definitions/RideFeaturesEntity"
+      distance:
+        type: number
+        description: "Дистанция в метрах, которую проехал пользователь в рамках поездки"
+        example: 120
+      price:
+        type: number
+        description: "Стоимость поездки в рублях"
+        example: 120.4
+      duration:
+        type: number
+        description: "Длительность поездки в секундах"
+        example: 1800
       status:
         type: "string"
         description: "Статус поездки"
@@ -356,6 +412,7 @@ definitions:
           - waiting
           - finished
           - canceled
+          - inspection
 
   RideCarEntity:
     type: "object"
@@ -367,6 +424,14 @@ definitions:
         $ref: "#/definitions/FuelCapacity"
       position:
         $ref: "#/definitions/LocationEntity"
+      number:
+        type: "string"
+        description: "Гос. номер автомобиля"
+        example: "у522уу799"
+      model:
+        type: "string"
+        description: "Марка + модель автомобиля"
+        example: "BMW 3-series"
 
   RideFeaturesEntity:
     type: "object"
@@ -389,24 +454,18 @@ definitions:
         description: "Стоимость минуты ожидания в рублях"
         example: 2.55
 
-  UserDataEntity:
-    type: "object"
-    properties:
-      fullEnsuranceEnable:
-        type: "boolean"
-        description: "Включена ли у пользователя полная страховка"
-      fullEnsuranceDescription:
-        type: "string"
-        description: "Текстовая информация, которая выводится у пользователя на плашке страховка"
-
   TokenEntity:
     type: "object"
+    description: |
+      Токен конкретного пользователя для работы с API методами.
     properties:
       token:
         type: "string"
         description: "16 символьный уникальный токен для пользвателя."
-      userData:
-        $ref: "#/definitions/UserDataEntity"
+      validUntil:
+        type: "integer"
+        description: "Дата в формате timestamp, до которой токен будет валидный (секунды)"
+        example: 1637907497
 
   PolicyEntity:
     type: "object"
@@ -416,7 +475,7 @@ definitions:
         description: "Текст правил сервиса и политики конфиденциальности"
       updatedAt:
         type: "integer"
-        description: "Дата изменения правил в виде timestamp (секунды)"
+        description: "Дата изменения правил в timestamp (секунды)"
         example: 1637907497
 
   FuelCapacity:
@@ -448,44 +507,83 @@ definitions:
         type: "string"
         description: "Марка + модель автомобиля"
         example: "BMW 3-series"
-      geozones:
-        $ref: "#/definitions/CarZonesEntity"
+      availableZoneSet:
+        $ref: "#/definitions/AvailableZoneSetEntity"
+      location:
+        $ref: "#/definitions/LocationEntity"
+      insurancePolicy:
+        $ref: "#/definitions/CarInsurancePolicyEntity"
       forbiddenRentReason:
         type: "string"
         description: |
           Код причины, по которой пользователю может быть недоступен этот автомобиль.
           В случае, если автомобиль доступен для текущего пользователя значение поля
           следует оставить в null (или пользователь неавторизован). Возможные коды ошибок:
-          <i>low_driver_experience</i> - низкий стаж вождения
+          <i>lowDriverExperience</i> - низкий стаж вождения
+          <i>lowServiceExperience</i> - низкий уровень доверия в сервисе
           <i>other</i> - другие причины
         enum:
-          - low_driver_experience
+          - lowDriverExperience
+          - lowServiceExperience
           - other
-      rates:
+      rate:
         type: "array"
         description: "Доступные тарифы для автомобиля"
         items:
           $ref: "#/definitions/RateEntity"
 
+  CarInsurancePolicyEntity:
+    properties:
+      description:
+        type: "string"
+        description: "Текстовая информация, которая выводится для пользователя в поле с описанием страховки"
+
+  AvailableZoneSetEntity:
+    type: object
+    properties:
+      setId:
+        type: "string"
+        description: "ID набора зон"
+      updatedAt:
+        type: "integer"
+        description: "Дата изменения набора данных в timestamp (секунды)"
+        example: 1637907497
+
   RateEntity:
     type: "object"
+    description: |
+      <p>Описание тарифа пользования автомобилем. В случае, если пользозователь неавторизован, есть возможность
+      передавать стоимость в диапазоне от...до (см. поля min/max в сущности OfferRangeEntity). </p>
+      <p>Для авторизованного пользователя в поля min/max следует передавать одинаковую стоимость.</p>
     properties:
       id:
         type: "string"
         format: "uuid"
+      description:
+        type: string
+        description: |
+          Подробное описание тарифа с поддержкой html тегов: h1, p, strong, img
       name:
         type: "string"
         description: "Название тарифа"
         example: "Поминутный"
-      fixed:
-        type: "boolean"
-        default: "Тариф для фиксированной поездки"
+      usagePrice:
+        type: number
+        description: Стоимость посадки в рублях
+        example: 100.55
+      holdAmount:
+        type: number
+        description: Сумма предсписания в рублях
+        example: 202.55
       offerParking:
         description: "Стоимость тарифа для режима ожидания"
         $ref: "#/definitions/OfferRangeEntity"
       offerRiding:
         description: "Стоимость тарифа для режима поездки"
         $ref: "#/definitions/OfferRangeEntity"
+      freeWaitingTime:
+        type: "integer"
+        description: "Время бесплатного ожидания в минутах. Если бесплатного времени ожидания не предусмотрено, следует пустое значение (null)."
 
   OfferRangeEntity:
     type: "object"
@@ -499,9 +597,11 @@ definitions:
         description: "Максимальная стоимость в рублях"
         example: 10.99
 
-  CarZonesEntity:
+  ZoneSetEntity:
     type: "object"
     properties:
+      id:
+        description: "ID набора зон"
       availableForDriving:
         type: "string"
         description: "Геозона (encoded polyline) поездки - зона, в рамках которой можно совершать поездку"
@@ -522,15 +622,18 @@ definitions:
       polyline:
         type: "string"
         description: "encoded polyline"
-      specialMessage:
+      shortDescription:
         type: "string"
         example: "Если поездка выйдет дешевле 1170Р, с карты дополнительно спишется недостающая разница"
-      shortName:
+      description:
         type: "string"
-        example: "VKO"
+        example: "Подробное описание зоны с поддержкой зоны h1, p, strong, img"
       name:
         type: "string"
-        example: "Внуково терминал А"
+        example: "SVO, 1134Р"
+      mapLabel:
+        type: "string"
+        example: "SVO"
 
   LocationDto:
     type: "object"
@@ -567,12 +670,12 @@ definitions:
         description: |
           Код ошибки при бронировании автомобиля. Коды ошибок:
           <ul>
-            <li>car_already_booking - машина уже забронирована другим пользователем;</li>
-            <li>user_has_ride - у пользователя уже есть активная поездка или бронь;</li>
+            <li>carAlreadyBooked - машина уже забронирована другим пользователем;</li>
+            <li>userHasRide - у пользователя уже есть активная поездка или бронь;</li>
           </ul>
         enum:
-          - car_already_booked
-          - user_has_ride
+          - carAlreadyBooked
+          - userHasRide
 
   ErrorRideCancelEntity:
     type: "object"
@@ -582,14 +685,14 @@ definitions:
         description: |
           Код ошибки при бронировании автомобиля. Коды ошибок:
           <ul>
-            <li>ride_not_found - поездка с таким ID не найдена;</li>
-            <li>ride_already_canceled - поездка с таким ID уже отменена.</li>
-            <li>ride_in_progress - поездку нельзя отменить, т.к. поездка в данный момент активна</li>
+            <li>rideNotFound - поездка с переданным ID не найдена;</li>
+            <li>rideAlreadyCanceled - поездка с переданным ID уже отменена;</li>
+            <li>rideInProgress - поездку нельзя отменить, т.к. поездка в данный момент активна</li>
           </ul>
         enum:
-          - ride_not_found
-          - ride_already_canceled
-          - ride_in_progress
+          - rideNotFound
+          - rideAlreadyCanceled
+          - rideInProgress
 
   ErrorEntity:
     type: "object"

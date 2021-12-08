@@ -17,7 +17,7 @@
       "post" : {
         "tags" : [ "carsharing" ],
         "summary" : "Получение авторизационного токена для работы с API",
-        "description" : "<p>Метод принимает номер телефона пользователя, который намеревается начать работу с системой каршеринга. Номер телефона заранее был верифицирован СМС сообщением на стороне МТ.</p>\n<p>При наличии авторизационных систем на стороне каршеринга возможна передача токена, который будет получен из этой системы (например, Яндекс.Паспорта).</p>\n<p>В случае, если на этот номер телефона есть зарегистрированный пользователь и он имеет права на использования сервиса - метод возвращает API токен, который будет использован при обращении к другим методах.</p>\n<p>Метод может вернуть ошибки, в случа если:\n<ul>\n  <li>Пользователь не зарегистрирован в системе (код ошибки userNotFound)</li>\n  <li>Пользователь не подтверждён - пользователю требуется пройти идентификацию документов или дождаться её завершения (код ошибки needConfirmation)</li>\n  <li>Пользователь заблокирован (код ошибки blocked)</li>\n</ul>\n</p>\n",
+        "description" : "<p>Метод принимает номер телефона пользователя, который намеревается начать работу с системой каршеринга. Номер телефона заранее был верифицирован СМС сообщением на стороне МТ.</p>\n<p>Время жизни предоставленного токена - 14 дней, по истечению которых токен необходимо запросить заново.</p>\n<p>При наличии авторизационных систем на стороне каршеринга возможна передача токена, который будет получен из этой системы (например, Яндекс.Паспорта).</p>\n<p>В случае, если на этот номер телефона есть зарегистрированный пользователь и он имеет права на использования сервиса - метод возвращает API токен, который будет использован при обращении к другим методах.</p>\n<p>Метод может вернуть ошибки, в случа если:\n<ul>\n  <li>Пользователь не зарегистрирован в системе (код ошибки userNotFound)</li>\n  <li>Пользователь не подтверждён - пользователю требуется пройти идентификацию документов или дождаться её завершения (код ошибки needConfirmation)</li>\n  <li>Пользователь заблокирован (код ошибки blocked)</li>\n</ul>\n</p>\n",
         "operationId" : "tokenCreate",
         "consumes" : [ "application/json" ],
         "produces" : [ "application/json" ],
@@ -68,32 +68,10 @@
         }
       }
     },
-    "/user" : {
-      "get" : {
-        "tags" : [ "carsharing" ],
-        "summary" : "Информация об авторизованном пользователе",
-        "description" : "",
-        "operationId" : "userGet",
-        "consumes" : [ "application/json" ],
-        "produces" : [ "application/json" ],
-        "parameters" : [ ],
-        "security" : [ {
-          "user_token" : [ ]
-        } ],
-        "responses" : {
-          "200" : {
-            "description" : "Успех операции",
-            "schema" : {
-              "$ref" : "#/definitions/UserDataEntity"
-            }
-          }
-        }
-      }
-    },
     "/car/{id}" : {
       "get" : {
         "tags" : [ "carsharing" ],
-        "summary" : "Получение информации об автомобиле",
+        "summary" : "Получение информации об автомобиле\"",
         "description" : "<p>Метод используется для вывода информации об автомобиле и доступных тарифах для него.</p>\n<p>Метод вызывается в момент открытии пользователем карточки автомобиля.</p>\n<p>Метод может вызываться без передачи авторизационного токена - в этом случае информация\nдолжна возвращаться для неавторизованного пользователя. Для такого пользователя\nдопустимо возвращении стоимости в различном диапазоне (например, стоимость минуты поездки от 7 до 10 рублей).\nДля авторизованного состояния для вывода стоимости будет использована минимальная граница (поле min).\n</p>\n",
         "operationId" : "carGet",
         "consumes" : [ "application/json" ],
@@ -103,13 +81,15 @@
           "in" : "path",
           "description" : "ID автомобиля из РНИС",
           "required" : true,
-          "type" : "integer",
-          "format" : "int64"
+          "type" : "string"
         } ],
         "security" : [ { }, {
           "user_token" : [ ]
         } ],
         "responses" : {
+          "401" : {
+            "description" : "Переданный токен невалиден. Ошибка возникает в случае если переданный\nтокен пользователя является невалидным (устарел или не существует).\n"
+          },
           "200" : {
             "description" : "Успех операции",
             "schema" : {
@@ -120,10 +100,36 @@
       }
     },
     "/ride" : {
+      "get" : {
+        "tags" : [ "carsharing" ],
+        "summary" : "Возвращает информацию об активной поездке пользователя",
+        "description" : "Метод возвращает сушность активной поездки пользователя. В случае, если поездка не найдена - метод\nвозвращает HTTP код 404.\n",
+        "operationId" : "currentRideGet",
+        "consumes" : [ "application/json" ],
+        "produces" : [ "application/json" ],
+        "parameters" : [ ],
+        "security" : [ {
+          "user_token" : [ ]
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Успех операции",
+            "schema" : {
+              "$ref" : "#/definitions/RideEntity"
+            }
+          },
+          "404" : {
+            "description" : "Активная поездка отсутствует"
+          },
+          "401" : {
+            "description" : "Переданный токен невалиден"
+          }
+        }
+      },
       "post" : {
         "tags" : [ "carsharing" ],
         "summary" : "Бронирование автомобиля за пользователем",
-        "description" : "<p>Метод брони автомобиля за пользователем.</p>\n<p>В момент создания брони на стороне каршеринг сервиса\nпроисходит холдирование средств за поездку. </p>\n<p>\n\n</p>\n",
+        "description" : "<p>Метод брони автомобиля за пользователем.</p>\n<p>В момент создания брони на стороне каршеринг сервиса\nпроисходит холдирование средств за поездку. </p>\n",
         "operationId" : "rideCreate",
         "consumes" : [ "application/json" ],
         "produces" : [ "application/json" ],
@@ -151,6 +157,9 @@
             "schema" : {
               "$ref" : "#/definitions/ErrorRideCreationEntity"
             }
+          },
+          "401" : {
+            "description" : "Переданный токен невалиден"
           }
         }
       }
@@ -181,8 +190,11 @@
               "$ref" : "#/definitions/RideEntity"
             }
           },
+          "401" : {
+            "description" : "Переданный токен невалиден"
+          },
           "404" : {
-            "description" : "Поездка с таким ID не найдена"
+            "description" : "Поездка с переданным ID не найдена"
           }
         }
       }
@@ -225,6 +237,41 @@
             "schema" : {
               "$ref" : "#/definitions/ErrorRideCancelEntity"
             }
+          },
+          "401" : {
+            "description" : "Переданный токен невалиден"
+          }
+        }
+      }
+    },
+    "/zone-set/{id}" : {
+      "get" : {
+        "tags" : [ "carsharing" ],
+        "summary" : "Получение набора зон по ID",
+        "description" : "Метод возвращает набор зон, в котором возможно совершить поездку, запрещённые и доступные для завершения аренды.\n",
+        "operationId" : "zoneSetGet",
+        "consumes" : [ "application/json" ],
+        "produces" : [ "application/json" ],
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "description" : "ID набора зон",
+          "required" : true,
+          "type" : "string",
+          "format" : "uuid"
+        } ],
+        "security" : [ {
+          "user_token" : [ ]
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Успех операции",
+            "schema" : {
+              "$ref" : "#/definitions/AvailableZoneSetEntity"
+            }
+          },
+          "404" : {
+            "description" : "Набор зон с переданным ID не найден"
           }
         }
       }
@@ -302,6 +349,11 @@
     "RideEntity" : {
       "type" : "object",
       "properties" : {
+        "id" : {
+          "type" : "string",
+          "format" : "uuid",
+          "description" : "ID поездки"
+        },
         "deepLink" : {
           "type" : "string",
           "description" : "Диплинк для перехода в приложение каршеринг сервиса"
@@ -310,9 +362,8 @@
           "type" : "string",
           "description" : "Сообщение, которое можно вывести в карточке автомобиля при необходимости"
         },
-        "hasFines" : {
-          "type" : "boolean",
-          "description" : "Есть ли неоплаченные штрафы в этой поездке"
+        "finesDescription" : {
+          "type" : "string"
         },
         "car" : {
           "description" : "Информация об автомобиле",
@@ -357,10 +408,25 @@
         "features" : {
           "$ref" : "#/definitions/RideFeaturesEntity"
         },
+        "distance" : {
+          "type" : "number",
+          "example" : 120.0,
+          "description" : "Дистанция в метрах, которую проехал пользователь в рамках поездки"
+        },
+        "price" : {
+          "type" : "number",
+          "example" : 120.4,
+          "description" : "Стоимость поездки в рублях"
+        },
+        "duration" : {
+          "type" : "number",
+          "example" : 1800.0,
+          "description" : "Длительность поездки в секундах"
+        },
         "status" : {
           "type" : "string",
           "description" : "Статус поездки",
-          "enum" : [ "active", "waiting", "finished", "canceled" ]
+          "enum" : [ "active", "waiting", "finished", "canceled", "inspection" ]
         }
       }
     },
@@ -376,6 +442,16 @@
         },
         "position" : {
           "$ref" : "#/definitions/LocationEntity"
+        },
+        "number" : {
+          "type" : "string",
+          "example" : "у522уу799",
+          "description" : "Гос. номер автомобиля"
+        },
+        "model" : {
+          "type" : "string",
+          "example" : "BMW 3-series",
+          "description" : "Марка + модель автомобиля"
         }
       }
     },
@@ -406,19 +482,6 @@
         }
       }
     },
-    "UserDataEntity" : {
-      "type" : "object",
-      "properties" : {
-        "fullEnsuranceEnable" : {
-          "type" : "boolean",
-          "description" : "Включена ли у пользователя полная страховка"
-        },
-        "fullEnsuranceDescription" : {
-          "type" : "string",
-          "description" : "Текстовая информация, которая выводится у пользователя на плашке страховка"
-        }
-      }
-    },
     "TokenEntity" : {
       "type" : "object",
       "properties" : {
@@ -426,10 +489,13 @@
           "type" : "string",
           "description" : "16 символьный уникальный токен для пользвателя."
         },
-        "userData" : {
-          "$ref" : "#/definitions/UserDataEntity"
+        "validUntil" : {
+          "type" : "integer",
+          "example" : 1637907497,
+          "description" : "Дата в формате timestamp, до которой токен будет валидный (секунды)"
         }
-      }
+      },
+      "description" : "Токен конкретного пользователя для работы с API методами.\n"
     },
     "PolicyEntity" : {
       "type" : "object",
@@ -441,7 +507,7 @@
         "updatedAt" : {
           "type" : "integer",
           "example" : 1637907497,
-          "description" : "Дата изменения правил в виде timestamp (секунды)"
+          "description" : "Дата изменения правил в timestamp (секунды)"
         }
       }
     },
@@ -479,20 +545,48 @@
           "example" : "BMW 3-series",
           "description" : "Марка + модель автомобиля"
         },
-        "geozones" : {
-          "$ref" : "#/definitions/CarZonesEntity"
+        "availableZoneSet" : {
+          "$ref" : "#/definitions/AvailableZoneSetEntity"
+        },
+        "location" : {
+          "$ref" : "#/definitions/LocationEntity"
+        },
+        "insurancePolicy" : {
+          "$ref" : "#/definitions/CarInsurancePolicyEntity"
         },
         "forbiddenRentReason" : {
           "type" : "string",
-          "description" : "Код причины, по которой пользователю может быть недоступен этот автомобиль.\nВ случае, если автомобиль доступен для текущего пользователя значение поля\nследует оставить в null (или пользователь неавторизован). Возможные коды ошибок:\n<i>low_driver_experience</i> - низкий стаж вождения\n<i>other</i> - другие причины\n",
-          "enum" : [ "low_driver_experience", "other" ]
+          "description" : "Код причины, по которой пользователю может быть недоступен этот автомобиль.\nВ случае, если автомобиль доступен для текущего пользователя значение поля\nследует оставить в null (или пользователь неавторизован). Возможные коды ошибок:\n<i>lowDriverExperience</i> - низкий стаж вождения\n<i>lowServiceExperience</i> - низкий уровень доверия в сервисе\n<i>other</i> - другие причины\n",
+          "enum" : [ "lowDriverExperience", "lowServiceExperience", "other" ]
         },
-        "rates" : {
+        "rate" : {
           "type" : "array",
           "description" : "Доступные тарифы для автомобиля",
           "items" : {
             "$ref" : "#/definitions/RateEntity"
           }
+        }
+      }
+    },
+    "CarInsurancePolicyEntity" : {
+      "properties" : {
+        "description" : {
+          "type" : "string",
+          "description" : "Текстовая информация, которая выводится для пользователя в поле с описанием страховки"
+        }
+      }
+    },
+    "AvailableZoneSetEntity" : {
+      "type" : "object",
+      "properties" : {
+        "setId" : {
+          "type" : "string",
+          "description" : "ID набора зон"
+        },
+        "updatedAt" : {
+          "type" : "integer",
+          "example" : 1637907497,
+          "description" : "Дата изменения набора данных в timestamp (секунды)"
         }
       }
     },
@@ -503,14 +597,24 @@
           "type" : "string",
           "format" : "uuid"
         },
+        "description" : {
+          "type" : "string",
+          "description" : "Подробное описание тарифа с поддержкой html тегов: h1, p, strong, img\n"
+        },
         "name" : {
           "type" : "string",
           "example" : "Поминутный",
           "description" : "Название тарифа"
         },
-        "fixed" : {
-          "type" : "boolean",
-          "default" : false
+        "usagePrice" : {
+          "type" : "number",
+          "example" : 100.55,
+          "description" : "Стоимость посадки в рублях"
+        },
+        "holdAmount" : {
+          "type" : "number",
+          "example" : 202.55,
+          "description" : "Сумма предсписания в рублях"
         },
         "offerParking" : {
           "description" : "Стоимость тарифа для режима ожидания",
@@ -519,8 +623,13 @@
         "offerRiding" : {
           "description" : "Стоимость тарифа для режима поездки",
           "$ref" : "#/definitions/OfferRangeEntity"
+        },
+        "freeWaitingTime" : {
+          "type" : "integer",
+          "description" : "Время бесплатного ожидания в минутах. Если бесплатного времени ожидания не предусмотрено, следует пустое значение (null)."
         }
-      }
+      },
+      "description" : "<p>Описание тарифа пользования автомобилем. В случае, если пользозователь неавторизован, есть возможность\nпередавать стоимость в диапазоне от...до (см. поля min/max в сущности OfferRangeEntity). </p>\n<p>Для авторизованного пользователя в поля min/max следует передавать одинаковую стоимость.</p>\n"
     },
     "OfferRangeEntity" : {
       "type" : "object",
@@ -537,9 +646,12 @@
         }
       }
     },
-    "CarZonesEntity" : {
+    "ZoneSetEntity" : {
       "type" : "object",
       "properties" : {
+        "id" : {
+          "description" : "ID набора зон"
+        },
         "availableForDriving" : {
           "type" : "string",
           "description" : "Геозона (encoded polyline) поездки - зона, в рамках которой можно совершать поездку"
@@ -567,17 +679,21 @@
           "type" : "string",
           "description" : "encoded polyline"
         },
-        "specialMessage" : {
+        "shortDescription" : {
           "type" : "string",
           "example" : "Если поездка выйдет дешевле 1170Р, с карты дополнительно спишется недостающая разница"
         },
-        "shortName" : {
+        "description" : {
           "type" : "string",
-          "example" : "VKO"
+          "example" : "Подробное описание зоны с поддержкой зоны h1, p, strong, img"
         },
         "name" : {
           "type" : "string",
-          "example" : "Внуково терминал А"
+          "example" : "SVO, 1134Р"
+        },
+        "mapLabel" : {
+          "type" : "string",
+          "example" : "SVO"
         }
       }
     },
@@ -620,8 +736,8 @@
       "properties" : {
         "errorCode" : {
           "type" : "string",
-          "description" : "Код ошибки при бронировании автомобиля. Коды ошибок:\n<ul>\n  <li>car_already_booking - машина уже забронирована другим пользователем;</li>\n  <li>user_has_ride - у пользователя уже есть активная поездка или бронь;</li>\n</ul>\n",
-          "enum" : [ "car_already_booked", "user_has_ride" ]
+          "description" : "Код ошибки при бронировании автомобиля. Коды ошибок:\n<ul>\n  <li>carAlreadyBooked - машина уже забронирована другим пользователем;</li>\n  <li>userHasRide - у пользователя уже есть активная поездка или бронь;</li>\n</ul>\n",
+          "enum" : [ "carAlreadyBooked", "userHasRide" ]
         }
       }
     },
@@ -630,8 +746,8 @@
       "properties" : {
         "errorCode" : {
           "type" : "string",
-          "description" : "Код ошибки при бронировании автомобиля. Коды ошибок:\n<ul>\n  <li>ride_not_found - поездка с таким ID не найдена;</li>\n  <li>ride_already_canceled - поездка с таким ID уже отменена.</li>\n  <li>ride_in_progress - поездку нельзя отменить, т.к. поездка в данный момент активна</li>\n</ul>\n",
-          "enum" : [ "ride_not_found", "ride_already_canceled", "ride_in_progress" ]
+          "description" : "Код ошибки при бронировании автомобиля. Коды ошибок:\n<ul>\n  <li>rideNotFound - поездка с переданным ID не найдена;</li>\n  <li>rideAlreadyCanceled - поездка с переданным ID уже отменена;</li>\n  <li>rideInProgress - поездку нельзя отменить, т.к. поездка в данный момент активна</li>\n</ul>\n",
+          "enum" : [ "rideNotFound", "rideAlreadyCanceled", "rideInProgress" ]
         }
       }
     },
