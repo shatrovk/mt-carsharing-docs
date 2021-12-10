@@ -196,7 +196,6 @@ paths:
           description: "ID поездки"
           required: true
           type: "string"
-          format: "uuid"
       responses:
         "200":
           description: "Успех операции"
@@ -225,7 +224,7 @@ paths:
           in: "path"
           description: "ID поездки"
           required: true
-          type: "integer"
+          type: "string"
         - in: "body"
           name: "body"
           description: "Данные для отмены брони"
@@ -252,7 +251,9 @@ paths:
         - "carsharing"
       summary: "Получение набора зон по ID"
       description: |
-        Метод возвращает набор зон, в котором возможно совершить поездку, запрещённые и доступные для завершения аренды.
+        Метод возвращает набор зон, в которых возможно совершить поездку, запрещённые и доступные для завершения аренды.
+        В метод передаётся ID набора зон, который приходит в карточке автомобиля (availableZoneSet.id).
+        Вызов метода будет происходить в том случае, если информация о наборе зон с таким ID отсутствует в БД МТ, или набор зон был обновлён (параметр availableZoneSet.updatedAt в карточке автомобиля)
       operationId: "zoneSetGet"
       consumes:
         - "application/json"
@@ -264,12 +265,11 @@ paths:
           description: "ID набора зон"
           required: true
           type: "string"
-          format: "uuid"
       responses:
         "200":
-          description: "Успех операции"
+          description: "Набор зон"
           schema:
-            $ref: "#/definitions/AvailableZoneSetEntity"
+            $ref: "#/definitions/ZoneSetEntity"
         "404":
           description: "Набор зон с переданным ID не найден"
       security:
@@ -277,6 +277,7 @@ paths:
 
   /ride-info:
     post:
+      deprecated: true
       tags:
         - "mt"
       summary: "Оповещение об изменениях в поездке"
@@ -327,13 +328,11 @@ definitions:
     type: "object"
     properties:
       carId:
-        type: "integer"
+        type: "string"
         description: "ID автомобиля"
-        format: "int64"
       rateId:
-        type: "integer"
+        type: "string"
         description: "ID тарифа"
-        format: "int64"
       userLocation:
         description: "Позиция пользователя в момент оформления заказа"
         $ref: "#/definitions/LocationDto"
@@ -350,7 +349,6 @@ definitions:
       id:
         description: "ID поездки"
         type: "string"
-        format: "uuid"
       deepLink:
         type: "string"
         description: "Диплинк для перехода в приложение каршеринг сервиса"
@@ -419,7 +417,6 @@ definitions:
     properties:
       id:
         type: "string"
-        format: "uuid"
       fuelCapacity:
         $ref: "#/definitions/FuelCapacity"
       position:
@@ -496,7 +493,6 @@ definitions:
     properties:
       id:
         type: "string"
-        format: "uuid"
       fuelCapacity:
         $ref: "#/definitions/FuelCapacity"
       carNum:
@@ -541,7 +537,7 @@ definitions:
   AvailableZoneSetEntity:
     type: object
     properties:
-      setId:
+      id:
         type: "string"
         description: "ID набора зон"
       updatedAt:
@@ -558,7 +554,6 @@ definitions:
     properties:
       id:
         type: "string"
-        format: "uuid"
       description:
         type: string
         description: |
@@ -676,6 +671,7 @@ definitions:
         enum:
           - carAlreadyBooked
           - userHasRide
+          - other
 
   ErrorRideCancelEntity:
     type: "object"

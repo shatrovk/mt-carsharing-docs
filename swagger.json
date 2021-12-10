@@ -177,8 +177,7 @@
           "in" : "path",
           "description" : "ID поездки",
           "required" : true,
-          "type" : "string",
-          "format" : "uuid"
+          "type" : "string"
         } ],
         "security" : [ {
           "user_token" : [ ]
@@ -212,7 +211,7 @@
           "in" : "path",
           "description" : "ID поездки",
           "required" : true,
-          "type" : "integer"
+          "type" : "string"
         }, {
           "in" : "body",
           "name" : "body",
@@ -248,7 +247,7 @@
       "get" : {
         "tags" : [ "carsharing" ],
         "summary" : "Получение набора зон по ID",
-        "description" : "Метод возвращает набор зон, в котором возможно совершить поездку, запрещённые и доступные для завершения аренды.\n",
+        "description" : "Метод возвращает набор зон, в которых возможно совершить поездку, запрещённые и доступные для завершения аренды.\nВ метод передаётся ID набора зон, который приходит в карточке автомобиля (availableZoneSet.id).\nВызов метода будет происходить в том случае, если информация о наборе зон с таким ID отсутствует в БД МТ, или набор зон был обновлён (параметр availableZoneSet.updatedAt в карточке автомобиля)\n",
         "operationId" : "zoneSetGet",
         "consumes" : [ "application/json" ],
         "produces" : [ "application/json" ],
@@ -257,17 +256,16 @@
           "in" : "path",
           "description" : "ID набора зон",
           "required" : true,
-          "type" : "string",
-          "format" : "uuid"
+          "type" : "string"
         } ],
         "security" : [ {
           "user_token" : [ ]
         } ],
         "responses" : {
           "200" : {
-            "description" : "Успех операции",
+            "description" : "Набор зон",
             "schema" : {
-              "$ref" : "#/definitions/AvailableZoneSetEntity"
+              "$ref" : "#/definitions/ZoneSetEntity"
             }
           },
           "404" : {
@@ -293,6 +291,7 @@
             "$ref" : "#/definitions/RideEntity"
           }
         } ],
+        "deprecated" : true,
         "responses" : {
           "200" : {
             "description" : "Успех операции"
@@ -323,13 +322,11 @@
       "type" : "object",
       "properties" : {
         "carId" : {
-          "type" : "integer",
-          "format" : "int64",
+          "type" : "string",
           "description" : "ID автомобиля"
         },
         "rateId" : {
-          "type" : "integer",
-          "format" : "int64",
+          "type" : "string",
           "description" : "ID тарифа"
         },
         "userLocation" : {
@@ -351,7 +348,6 @@
       "properties" : {
         "id" : {
           "type" : "string",
-          "format" : "uuid",
           "description" : "ID поездки"
         },
         "deepLink" : {
@@ -434,8 +430,7 @@
       "type" : "object",
       "properties" : {
         "id" : {
-          "type" : "string",
-          "format" : "uuid"
+          "type" : "string"
         },
         "fuelCapacity" : {
           "$ref" : "#/definitions/FuelCapacity"
@@ -529,8 +524,7 @@
       "type" : "object",
       "properties" : {
         "id" : {
-          "type" : "string",
-          "format" : "uuid"
+          "type" : "string"
         },
         "fuelCapacity" : {
           "$ref" : "#/definitions/FuelCapacity"
@@ -579,7 +573,7 @@
     "AvailableZoneSetEntity" : {
       "type" : "object",
       "properties" : {
-        "setId" : {
+        "id" : {
           "type" : "string",
           "description" : "ID набора зон"
         },
@@ -594,8 +588,7 @@
       "type" : "object",
       "properties" : {
         "id" : {
-          "type" : "string",
-          "format" : "uuid"
+          "type" : "string"
         },
         "description" : {
           "type" : "string",
@@ -737,7 +730,7 @@
         "errorCode" : {
           "type" : "string",
           "description" : "Код ошибки при бронировании автомобиля. Коды ошибок:\n<ul>\n  <li>carAlreadyBooked - машина уже забронирована другим пользователем;</li>\n  <li>userHasRide - у пользователя уже есть активная поездка или бронь;</li>\n</ul>\n",
-          "enum" : [ "carAlreadyBooked", "userHasRide" ]
+          "enum" : [ "carAlreadyBooked", "userHasRide", "other" ]
         }
       }
     },
