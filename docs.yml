@@ -42,9 +42,9 @@ paths:
         - in: "body"
           name: "body"
           description: "Данные для получения токена"
-          required: true
           schema:
             $ref: "#/definitions/TokenDto"
+          required: true
       responses:
         "200":
           description: "Успех операции"
@@ -81,7 +81,7 @@ paths:
     get:
       tags:
         - "carsharing"
-      summary: Получение информации об автомобиле"
+      summary: Получение информации об автомобиле
       description: |
         <p>Метод используется для вывода информации об автомобиле и доступных тарифах для него.</p>
         <p>Метод вызывается в момент открытия пользователем карточки автомобиля.</p>
@@ -94,9 +94,9 @@ paths:
       parameters:
         - name: "id"
           in: "path"
-          description: "ID автомобиля из РНИС"
-          required: true
           type: "string"
+          required: true
+          description: "ID автомобиля из РНИС"
       consumes:
         - "application/json"
       produces:
@@ -257,9 +257,9 @@ paths:
       parameters:
         - name: "id"
           in: "path"
-          description: "ID набора зон"
-          required: true
           type: "string"
+          required: true
+          description: "ID набора зон"
       responses:
         "200":
           description: "Набор зон"
@@ -311,12 +311,14 @@ securityDefinitions:
     description: "Токен пользователя, полученный в рамках вызова метода POST /token"
     name: "UserToken"
     in: "header"
+
 definitions:
   TokenDto:
     type: "object"
     properties:
       phoneNum:
         type: "integer"
+        required: true
         description: "Номер телефона в формате <i>70000000000</i> (только цифры)"
 
   RideDto:
@@ -324,28 +326,37 @@ definitions:
     properties:
       carId:
         type: "string"
+        required: true
         description: "ID автомобиля"
-      rateId:
+      offerId:
         type: "string"
+        required: true
         description: "ID тарифа"
+      policyVersion:
+        type: "string"
+        description: "Версия оферты, которая принята у пользователя на стороне МТ. Поле может быть null, если схема работы оператора не предполагает принятия оферты (конфигурируется на стороне МТ для каждого оператора)."
       userLocation:
         description: "Позиция пользователя в момент оформления заказа"
         $ref: "#/definitions/LocationDto"
+        required: true
 
   RideCancelDto:
     type: "object"
     properties:
       userLocation:
         $ref: "#/definitions/LocationDto"
+        required: true
 
   RideEntity:
     type: "object"
     properties:
       id:
         description: "ID поездки"
+        required: true
         type: "string"
       deepLink:
         type: "string"
+        required: true
         description: "Диплинк для перехода в приложение каршеринг сервиса"
       specialMessage:
         type: "string"
@@ -354,26 +365,29 @@ definitions:
         type: "string"
       car:
         description: "Информация об автомобиле"
+        required: true
         $ref: "#/definitions/RideCarEntity"
       waiting:
         description: "Информация о времени ожидания"
         $ref: "#/definitions/RideWaitingInfoEntity"
-      rate:
+      offer:
         description: "Информация о используемом тарифе в рамках этой брони"
-        $ref: "#/definitions/RateEntity"
+        $ref: "#/definitions/RideOfferEntity"
       pointStart:
+        required: true
         description: "Точка старта поездки (откуда поездка была начата - по сути является точкой автомобиля при брони)"
         $ref: "#/definitions/LocationEntity"
       pointFinish:
         description: "Точка завершения поездки"
         $ref: "#/definitions/LocationEntity"
       createdAt:
+        required: true
         type: "integer"
         description: "Время создания брони в формате timestamp (секунды)"
         example: 1637917148
       startedAt:
         type: "integer"
-        description: "Время старта поездки в формате timestamp (секунды)"
+        description: "Время старта поездки (пользователь осмотрел автомобиль и начал аренду) в формате timestamp (секунды)"
         example: 1637917148
       canceledAt:
         type: "integer"
@@ -390,14 +404,9 @@ definitions:
         description: "Дистанция в метрах, которую проехал пользователь в рамках поездки"
         example: 120
       price:
-        type: number
-        description: "Стоимость поездки в рублях"
-        example: 120.4
-      duration:
-        type: number
-        description: "Длительность поездки в секундах"
-        example: 1800
+        $ref: "#/definitions/RidePriceEntity"
       status:
+        required: true
         type: "string"
         description: "Статус поездки"
         enum:
@@ -407,21 +416,41 @@ definitions:
           - canceled
           - inspection
 
+  RidePriceEntity:
+    type: "object"
+    properties:
+      parkingTime:
+        type: "number"
+        description: "Длительность ожидания в секундах"
+        example: 180
+      parkingPrice:
+        type: "number"
+        description: "Стоимость за ожидание в копейках"
+        example: 799
+      ridingPrice:
+        type: "number"
+        description: "Итоговая стоимость поездки в копейках"
+        example: 799
+
   RideCarEntity:
     type: "object"
     properties:
       id:
         type: "string"
+        required: true
       fuelCapacity:
+        required: true
         $ref: "#/definitions/FuelCapacity"
       position:
         $ref: "#/definitions/LocationEntity"
       number:
         type: "string"
+        required: true
         description: "Гос. номер автомобиля"
         example: "у522уу799"
       model:
         type: "string"
+        required: true
         description: "Марка + модель автомобиля"
         example: "BMW 3-series"
 
@@ -443,8 +472,8 @@ definitions:
         description: "Время в формате timestamp (секунды) до которого время ожидания является бесплатным"
       pricePerMin:
         type: "number"
-        description: "Стоимость минуты ожидания в рублях"
-        example: 2.55
+        description: "Стоимость минуты ожидания в копейках"
+        example: 255
 
   TokenEntity:
     type: "object"
@@ -464,11 +493,11 @@ definitions:
     properties:
       content:
         type: "string"
-        description: "Текст правил сервиса и политики конфиденциальности"
-      updatedAt:
-        type: "integer"
-        description: "Дата изменения правил в timestamp (секунды)"
-        example: 1637907497
+        description: |
+          Текст правил сервиса и политики конфиденциальности: h1, p, strong, img
+      version:
+        type: "string"
+        description: "Версия оферты"
 
   FuelCapacity:
     type: "object"
@@ -477,7 +506,7 @@ definitions:
         type: "number"
         description: "Доступный уровень топлива для автомобиля в километрах или %"
         example: 12.4
-      oneOf:
+      type:
         type: "string"
         enum:
           - km
@@ -515,16 +544,20 @@ definitions:
           следует оставить в null (или пользователь неавторизован). Возможные коды ошибок:
           <i>lowDriverExperience</i> - низкий стаж вождения
           <i>lowServiceExperience</i> - низкий уровень доверия в сервисе
+          <i>carAlreadyBooked</i> - автомобиль уже забронирован другим пользователем
+          <i>userDebt</i> - автомобиль уже забронирован другим пользователем
           <i>other</i> - другие причины
         enum:
           - lowDriverExperience
           - lowServiceExperience
+          - carAlreadyBooked
+          - userDebt
           - other
-      rate:
+      offer:
         type: "array"
         description: "Доступные тарифы для автомобиля"
         items:
-          $ref: "#/definitions/RateEntity"
+          $ref: "#/definitions/OfferRangeEntity"
 
   CarInsurancePolicyEntity:
     properties:
@@ -543,7 +576,44 @@ definitions:
         description: "Дата изменения набора данных в timestamp (секунды)"
         example: 1637907497
 
-  RateEntity:
+  RideOfferEntity:
+    type: "object"
+    description: |
+      <p>Описание тарифа пользования автомобилем. В случае, если пользозователь неавторизован, есть возможность
+      передавать стоимость в диапазоне от...до (см. поля min/max в сущности OfferRangeEntity). </p>
+      <p>Для авторизованного пользователя в поля min/max следует передавать одинаковую стоимость.</p>
+    properties:
+      id:
+        type: "string"
+      description:
+        type: string
+        description: |
+          Подробное описание тарифа с поддержкой html тегов: h1, p, strong, img
+      name:
+        type: string
+        description: "Название тарифа"
+        example: "Поминутный"
+      usagePrice:
+        type: number
+        description: Стоимость посадки в копейках
+        example: 10055
+      holdAmount:
+        type: number
+        description: Сумма предсписания в копейках
+        example: 20255
+      parkingSumPerMin:
+        type: number
+        description: "Стоимость тарифа для режима ожидания в копейках"
+        example: 10055
+      ridingSumPerMin:
+        type: number
+        description: "Стоимость тарифа для режима поездки в копейках"
+        example: 10055
+      freeWaitingTime:
+        type: integer
+        description: "Время бесплатного ожидания в минутах. Если бесплатного времени ожидания не предусмотрено, следует пустое значение (null)."
+
+  OfferRangeEntity:
     type: "object"
     description: |
       <p>Описание тарифа пользования автомобилем. В случае, если пользозователь неавторизован, есть возможность
@@ -562,33 +632,36 @@ definitions:
         example: "Поминутный"
       usagePrice:
         type: number
-        description: Стоимость посадки в рублях
-        example: 100.55
+        description: Стоимость посадки в копейках
+        example: 10055
       holdAmount:
         type: number
-        description: Сумма предсписания в рублях
-        example: 202.55
+        description: Сумма предсписания в копейках
+        example: 20255
       offerParking:
         description: "Стоимость тарифа для режима ожидания"
-        $ref: "#/definitions/OfferRangeEntity"
+        $ref: "#/definitions/OfferRangePriceEntity"
       offerRiding:
         description: "Стоимость тарифа для режима поездки"
-        $ref: "#/definitions/OfferRangeEntity"
+        $ref: "#/definitions/OfferRangePriceEntity"
       freeWaitingTime:
         type: "integer"
         description: "Время бесплатного ожидания в минутах. Если бесплатного времени ожидания не предусмотрено, следует пустое значение (null)."
+      validUntil:
+        type: number
+        description: "Время в timestamp (секунды), до которого дейсвителен это предложение"
 
-  OfferRangeEntity:
+  OfferRangePriceEntity:
     type: "object"
     properties:
       min:
         type: "number"
-        description: "Минимальная стоимость в рублях"
-        example: 7.99
+        description: "Минимальная стоимость в копейках"
+        example: 799
       max:
         type: "number"
-        description: "Максимальная стоимость в рублях"
-        example: 10.99
+        description: "Максимальная стоимость в копейках"
+        example: 1099
 
   ZoneSetEntity:
     type: "object"
@@ -596,25 +669,25 @@ definitions:
       id:
         description: "ID набора зон"
       availableForDriving:
-        type: "string"
-        description: "Геозона (encoded polyline) поездки - зона, в рамках которой можно совершать поездку"
+        type: "object"
+        description: "Геозона (полигон в формате GeoJSON) поездки - зона, в рамках которой можно совершать поездку"
       forbiddenComplete:
         type: "array"
         items:
           $ref: "#/definitions/ZoneEntity"
-        description: "Массив зон (encoded polyline), где запрещено завершать аренду (но можно перевести в режим ожидания)"
+        description: "Коллекция зон, где запрещено завершать аренду (но можно перевести в режим ожидания)"
       allowComplete:
         type: "array"
         items:
           $ref: "#/definitions/ZoneEntity"
-        description: "Массив зон (encoded polyline), где можно переводить в режим ожидания и завершать аренду"
+        description: "Коллекция зон, где можно переводить в режим ожидания и завершать аренду"
 
   ZoneEntity:
     type: "object"
     properties:
       polyline:
-        type: "string"
-        description: "encoded polyline"
+        type: "object"
+        description: "Геозона (полигон в формате GeoJSON)"
       shortDescription:
         type: "string"
         example: "Если поездка выйдет дешевле 1170Р, с карты дополнительно спишется недостающая разница"
@@ -633,10 +706,12 @@ definitions:
     properties:
       lat:
         type: "number"
+        required: true
         description: "Широта"
         example: 55.747534
       lon:
         type: "number"
+        required: true
         description: "Долгота"
         example: 37.626030
 
@@ -645,13 +720,16 @@ definitions:
     properties:
       address:
         type: "string"
+        required: true
         example: "Москва, ул. Тверская, д. 13"
       lat:
         type: "number"
+        required: true
         description: "Широта"
         example: 55.747534
       lon:
         type: "number"
+        required: true
         description: "Долгота"
         example: 37.626030
 
@@ -660,20 +738,30 @@ definitions:
     properties:
       errorCode:
         type: "string"
+        required: true
         description: |
           Код ошибки при бронировании автомобиля. Коды ошибок:
           <ul>
+            <li>carNotFound - передан некорректный ID автомобиля;</li>
             <li>carAlreadyBooked - машина уже забронирована другим пользователем;</li>
             <li>userHasRide - у пользователя уже есть активная поездка или бронь;</li>
             <li>depricatedPolicy - принятая пользователем оферта устарела;</li>
+            <li>userDebt - у пользователя есть задолженность;</li>
             <li>userBlocked - пользователь заблокирован;</li>
+            <li>carNotAvailable - автомобиль недоступен для этого пользователя;</li>
+            <li>paymentError - ошибка при проведении оплаты;</li>
+            <li>invalidOffer - передан неверный или просроченный тариф;</li>
             <li>other - другая ошибка, которую на данный момент не поддерживает логика МТ.</li>
           </ul>
         enum:
+          - carNotFound
           - carAlreadyBooked
+          - carNotAvailable
           - userHasRide
           - depricatedPolicy
           - userBlocked
+          - userDebt
+          - paymentError
           - other
 
   ErrorTokenCreationEntity:
@@ -681,17 +769,18 @@ definitions:
     properties:
       errorCode:
         type: "string"
+        required: true
         description: |
           Код ошибки при бронировании автомобиля. Коды ошибок:
           <ul>
           <li>Пользователь не зарегистрирован в системе (код ошибки userNotFound)</li>
-          <li>Пользователь не подтверждён - пользователю требуется пройти идентификацию документов или дождаться её завершения (код ошибки needConfirmation)</li>
+          <li>Пользователь не завершил процедуру регистрации (код ошибки registrationNotComplited). Например: не добавлена банковская карта, не завершена процедура верификации, требуются другие действия для завершения регистрации в мобильном приложении</li>
           <li>Пользователь заблокирован (код ошибки blocked)</li>
           <li>Другая причина (код ошибки other)</li>
           </ul>
         enum:
           - userNotFound
-          - needConfirmation
+          - registrationNotComplited
           - blocked
           - other
 
@@ -700,6 +789,7 @@ definitions:
     properties:
       errorCode:
         type: "string"
+        required: true
         description: |
           Код ошибки при бронировании автомобиля. Коды ошибок:
           <ul>
@@ -717,3 +807,4 @@ definitions:
     properties:
       errorCode:
         type: "string"
+        required: true

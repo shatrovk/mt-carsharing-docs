@@ -71,7 +71,7 @@
     "/car/{id}" : {
       "get" : {
         "tags" : [ "carsharing" ],
-        "summary" : "Получение информации об автомобиле\"",
+        "summary" : "Получение информации об автомобиле",
         "description" : "<p>Метод используется для вывода информации об автомобиле и доступных тарифах для него.</p>\n<p>Метод вызывается в момент открытия пользователем карточки автомобиля.</p>\n<p>Метод может вызываться без передачи авторизационного токена - в этом случае информация\nдолжна возвращаться для неавторизованного пользователя. Для такого пользователя\nдопустимо возвращении стоимости в различном диапазоне (например, стоимость минуты поездки от 7 до 10 рублей).\nДля авторизованного состояния для вывода стоимости будет использована минимальная граница (поле min).\n</p>\n",
         "operationId" : "carGet",
         "consumes" : [ "application/json" ],
@@ -103,7 +103,7 @@
       "get" : {
         "tags" : [ "carsharing" ],
         "summary" : "Возвращает информацию об активной поездке пользователя",
-        "description" : "Метод возвращает сушность активной поездки пользователя. В случае, если поездка не найдена - метод\nвозвращает HTTP код 404.\n",
+        "description" : "Метод возвращает сущность активной поездки пользователя. В случае, если поездка не найдена - метод\nвозвращает HTTP код 404.\n",
         "operationId" : "currentRideGet",
         "consumes" : [ "application/json" ],
         "produces" : [ "application/json" ],
@@ -168,7 +168,7 @@
       "get" : {
         "tags" : [ "carsharing" ],
         "summary" : "Получение брони по ID",
-        "description" : "Метод возвращает сущность поездки, аналогичную методу создания.",
+        "description" : "Метод возвращает сущность поездки.",
         "operationId" : "rideGet",
         "consumes" : [ "application/json" ],
         "produces" : [ "application/json" ],
@@ -193,7 +193,7 @@
             "description" : "Переданный токен невалиден"
           },
           "404" : {
-            "description" : "Поездка с переданным ID не найдена"
+            "description" : "Поездка с переданным ID не найдена у переданного пользователя"
           }
         }
       }
@@ -202,7 +202,6 @@
       "post" : {
         "tags" : [ "carsharing" ],
         "summary" : "Отмена брони",
-        "description" : "Метод возвращает сущность бронирования, аналогичную методу создания.",
         "operationId" : "rideCancel",
         "consumes" : [ "application/json" ],
         "produces" : [ "application/json" ],
@@ -239,6 +238,9 @@
           },
           "401" : {
             "description" : "Переданный токен невалиден"
+          },
+          "404" : {
+            "description" : "Поездка с переданным ID не найдена у переданного пользователя"
           }
         }
       }
@@ -325,9 +327,13 @@
           "type" : "string",
           "description" : "ID автомобиля"
         },
-        "rateId" : {
+        "offerId" : {
           "type" : "string",
           "description" : "ID тарифа"
+        },
+        "policyVersion" : {
+          "type" : "string",
+          "description" : "Версия оферты, которая принята у пользователя на стороне МТ. Поле может быть null, если схема работы оператора не предполагает принятия оферты (конфигурируется на стороне МТ для каждого оператора)."
         },
         "userLocation" : {
           "description" : "Позиция пользователя в момент оформления заказа",
@@ -369,9 +375,9 @@
           "description" : "Информация о времени ожидания",
           "$ref" : "#/definitions/RideWaitingInfoEntity"
         },
-        "rate" : {
+        "offer" : {
           "description" : "Информация о используемом тарифе в рамках этой брони",
-          "$ref" : "#/definitions/RateEntity"
+          "$ref" : "#/definitions/RideOfferEntity"
         },
         "pointStart" : {
           "description" : "Точка старта поездки (откуда поездка была начата - по сути является точкой автомобиля при брони)",
@@ -389,7 +395,7 @@
         "startedAt" : {
           "type" : "integer",
           "example" : 1637917148,
-          "description" : "Время старта поездки в формате timestamp (секунды)"
+          "description" : "Время старта поездки (пользователь осмотрел автомобиль и начал аренду) в формате timestamp (секунды)"
         },
         "canceledAt" : {
           "type" : "integer",
@@ -410,19 +416,32 @@
           "description" : "Дистанция в метрах, которую проехал пользователь в рамках поездки"
         },
         "price" : {
-          "type" : "number",
-          "example" : 120.4,
-          "description" : "Стоимость поездки в рублях"
-        },
-        "duration" : {
-          "type" : "number",
-          "example" : 1800.0,
-          "description" : "Длительность поездки в секундах"
+          "$ref" : "#/definitions/RidePriceEntity"
         },
         "status" : {
           "type" : "string",
           "description" : "Статус поездки",
           "enum" : [ "active", "waiting", "finished", "canceled", "inspection" ]
+        }
+      }
+    },
+    "RidePriceEntity" : {
+      "type" : "object",
+      "properties" : {
+        "parkingTime" : {
+          "type" : "number",
+          "example" : 180.0,
+          "description" : "Длительность ожидания в секундах"
+        },
+        "parkingPrice" : {
+          "type" : "number",
+          "example" : 799.0,
+          "description" : "Стоимость за ожидание в копейках"
+        },
+        "ridingPrice" : {
+          "type" : "number",
+          "example" : 799.0,
+          "description" : "Итоговая стоимость поездки в копейках"
         }
       }
     },
@@ -472,8 +491,8 @@
         },
         "pricePerMin" : {
           "type" : "number",
-          "example" : 2.55,
-          "description" : "Стоимость минуты ожидания в рублях"
+          "example" : 255.0,
+          "description" : "Стоимость минуты ожидания в копейках"
         }
       }
     },
@@ -482,7 +501,7 @@
       "properties" : {
         "token" : {
           "type" : "string",
-          "description" : "16 символьный уникальный токен для пользвателя."
+          "description" : "16 символьный уникальный токен для пользователя."
         },
         "validUntil" : {
           "type" : "integer",
@@ -497,12 +516,11 @@
       "properties" : {
         "content" : {
           "type" : "string",
-          "description" : "Текст правил сервиса и политики конфиденциальности"
+          "description" : "Текст правил сервиса и политики конфиденциальности: h1, p, strong, img\n"
         },
-        "updatedAt" : {
-          "type" : "integer",
-          "example" : 1637907497,
-          "description" : "Дата изменения правил в timestamp (секунды)"
+        "version" : {
+          "type" : "string",
+          "description" : "Версия оферты"
         }
       }
     },
@@ -514,7 +532,7 @@
           "example" : 12.4,
           "description" : "Доступный уровень топлива для автомобиля в километрах или %"
         },
-        "oneOf" : {
+        "type" : {
           "type" : "string",
           "enum" : [ "km", "percent" ]
         }
@@ -554,14 +572,14 @@
         },
         "forbiddenRentReason" : {
           "type" : "string",
-          "description" : "Код причины, по которой пользователю может быть недоступен этот автомобиль.\nВ случае, если автомобиль доступен для текущего пользователя значение поля\nследует оставить в null (или пользователь неавторизован). Возможные коды ошибок:\n<i>lowDriverExperience</i> - низкий стаж вождения\n<i>lowServiceExperience</i> - низкий уровень доверия в сервисе\n<i>other</i> - другие причины\n",
-          "enum" : [ "lowDriverExperience", "lowServiceExperience", "other" ]
+          "description" : "Код причины, по которой пользователю может быть недоступен этот автомобиль.\nВ случае, если автомобиль доступен для текущего пользователя значение поля\nследует оставить в null (или пользователь неавторизован). Возможные коды ошибок:\n<i>lowDriverExperience</i> - низкий стаж вождения\n<i>lowServiceExperience</i> - низкий уровень доверия в сервисе\n<i>carAlreadyBooked</i> - автомобиль уже забронирован другим пользователем\n<i>userDebt</i> - автомобиль уже забронирован другим пользователем\n<i>other</i> - другие причины\n",
+          "enum" : [ "lowDriverExperience", "lowServiceExperience", "carAlreadyBooked", "userDebt", "other" ]
         },
-        "rate" : {
+        "offer" : {
           "type" : "array",
           "description" : "Доступные тарифы для автомобиля",
           "items" : {
-            "$ref" : "#/definitions/RateEntity"
+            "$ref" : "#/definitions/OfferRangeEntity"
           }
         }
       }
@@ -588,7 +606,7 @@
         }
       }
     },
-    "RateEntity" : {
+    "RideOfferEntity" : {
       "type" : "object",
       "properties" : {
         "id" : {
@@ -605,21 +623,23 @@
         },
         "usagePrice" : {
           "type" : "number",
-          "example" : 100.55,
-          "description" : "Стоимость посадки в рублях"
+          "example" : 10055.0,
+          "description" : "Стоимость посадки в копейках"
         },
         "holdAmount" : {
           "type" : "number",
-          "example" : 202.55,
-          "description" : "Сумма предсписания в рублях"
+          "example" : 20255.0,
+          "description" : "Сумма предсписания в копейках"
         },
-        "offerParking" : {
-          "description" : "Стоимость тарифа для режима ожидания",
-          "$ref" : "#/definitions/OfferRangeEntity"
+        "parkingSumPerMin" : {
+          "type" : "number",
+          "example" : 10055.0,
+          "description" : "Стоимость тарифа для режима ожидания в копейках"
         },
-        "offerRiding" : {
-          "description" : "Стоимость тарифа для режима поездки",
-          "$ref" : "#/definitions/OfferRangeEntity"
+        "ridingSumPerMin" : {
+          "type" : "number",
+          "example" : 10055.0,
+          "description" : "Стоимость тарифа для режима поездки в копейках"
         },
         "freeWaitingTime" : {
           "type" : "integer",
@@ -631,15 +651,59 @@
     "OfferRangeEntity" : {
       "type" : "object",
       "properties" : {
+        "id" : {
+          "type" : "string"
+        },
+        "description" : {
+          "type" : "string",
+          "description" : "Подробное описание тарифа с поддержкой html тегов: h1, p, strong, img\n"
+        },
+        "name" : {
+          "type" : "string",
+          "example" : "Поминутный",
+          "description" : "Название тарифа"
+        },
+        "usagePrice" : {
+          "type" : "number",
+          "example" : 10055.0,
+          "description" : "Стоимость посадки в копейках"
+        },
+        "holdAmount" : {
+          "type" : "number",
+          "example" : 20255.0,
+          "description" : "Сумма предсписания в копейках"
+        },
+        "offerParking" : {
+          "description" : "Стоимость тарифа для режима ожидания",
+          "$ref" : "#/definitions/OfferRangePriceEntity"
+        },
+        "offerRiding" : {
+          "description" : "Стоимость тарифа для режима поездки",
+          "$ref" : "#/definitions/OfferRangePriceEntity"
+        },
+        "freeWaitingTime" : {
+          "type" : "integer",
+          "description" : "Время бесплатного ожидания в минутах. Если бесплатного времени ожидания не предусмотрено, следует пустое значение (null)."
+        },
+        "validUntil" : {
+          "type" : "number",
+          "description" : "Время в timestamp (секунды), до которого дейсвителен это предложение"
+        }
+      },
+      "description" : "<p>Описание тарифа пользования автомобилем. В случае, если пользозователь неавторизован, есть возможность\nпередавать стоимость в диапазоне от...до (см. поля min/max в сущности OfferRangeEntity). </p>\n<p>Для авторизованного пользователя в поля min/max следует передавать одинаковую стоимость.</p>\n"
+    },
+    "OfferRangePriceEntity" : {
+      "type" : "object",
+      "properties" : {
         "min" : {
           "type" : "number",
-          "example" : 7.99,
-          "description" : "Минимальная стоимость в рублях"
+          "example" : 799.0,
+          "description" : "Минимальная стоимость в копейках"
         },
         "max" : {
           "type" : "number",
-          "example" : 10.99,
-          "description" : "Максимальная стоимость в рублях"
+          "example" : 1099.0,
+          "description" : "Максимальная стоимость в копейках"
         }
       }
     },
@@ -650,19 +714,20 @@
           "description" : "ID набора зон"
         },
         "availableForDriving" : {
-          "type" : "string",
-          "description" : "Геозона (encoded polyline) поездки - зона, в рамках которой можно совершать поездку"
+          "type" : "object",
+          "description" : "Геозона (полигон в формате GeoJSON) поездки - зона, в рамках которой можно совершать поездку",
+          "properties" : { }
         },
         "forbiddenComplete" : {
           "type" : "array",
-          "description" : "Массив зон (encoded polyline), где запрещено завершать аренду (но можно перевести в режим ожидания)",
+          "description" : "Коллекция зон, где запрещено завершать аренду (но можно перевести в режим ожидания)",
           "items" : {
             "$ref" : "#/definitions/ZoneEntity"
           }
         },
         "allowComplete" : {
           "type" : "array",
-          "description" : "Массив зон (encoded polyline), где можно переводить в режим ожидания и завершать аренду",
+          "description" : "Коллекция зон, где можно переводить в режим ожидания и завершать аренду",
           "items" : {
             "$ref" : "#/definitions/ZoneEntity"
           }
@@ -673,8 +738,9 @@
       "type" : "object",
       "properties" : {
         "polyline" : {
-          "type" : "string",
-          "description" : "encoded polyline"
+          "type" : "object",
+          "description" : "Геозона (полигон в формате GeoJSON)",
+          "properties" : { }
         },
         "shortDescription" : {
           "type" : "string",
@@ -733,8 +799,8 @@
       "properties" : {
         "errorCode" : {
           "type" : "string",
-          "description" : "Код ошибки при бронировании автомобиля. Коды ошибок:\n<ul>\n  <li>carAlreadyBooked - машина уже забронирована другим пользователем;</li>\n  <li>userHasRide - у пользователя уже есть активная поездка или бронь;</li>\n  <li>depricatedPolicy - принятая пользователем оферта устарела;</li>\n  <li>userBlocked - пользователь заблокирован;</li>\n  <li>other - другая ошибка, которую на данный момент не поддерживает логика МТ.</li>\n</ul>\n",
-          "enum" : [ "carAlreadyBooked", "userHasRide", "depricatedPolicy", "userBlocked", "other" ]
+          "description" : "Код ошибки при бронировании автомобиля. Коды ошибок:\n<ul>\n  <li>carNotFound - передан некорректный ID автомобиля;</li>\n  <li>carAlreadyBooked - машина уже забронирована другим пользователем;</li>\n  <li>userHasRide - у пользователя уже есть активная поездка или бронь;</li>\n  <li>depricatedPolicy - принятая пользователем оферта устарела;</li>\n  <li>userDebt - у пользователя есть задолженность;</li>\n  <li>userBlocked - пользователь заблокирован;</li>\n  <li>carNotAvailable - автомобиль недоступен для этого пользователя;</li>\n  <li>paymentError - ошибка при проведении оплаты;</li>\n  <li>invalidOffer - передан неверный или просроченный тариф;</li>\n  <li>other - другая ошибка, которую на данный момент не поддерживает логика МТ.</li>\n</ul>\n",
+          "enum" : [ "carNotFound", "carAlreadyBooked", "carNotAvailable", "userHasRide", "depricatedPolicy", "userBlocked", "userDebt", "paymentError", "other" ]
         }
       }
     },
@@ -743,8 +809,8 @@
       "properties" : {
         "errorCode" : {
           "type" : "string",
-          "description" : "Код ошибки при бронировании автомобиля. Коды ошибок:\n<ul>\n<li>Пользователь не зарегистрирован в системе (код ошибки userNotFound)</li>\n<li>Пользователь не подтверждён - пользователю требуется пройти идентификацию документов или дождаться её завершения (код ошибки needConfirmation)</li>\n<li>Пользователь заблокирован (код ошибки blocked)</li>\n<li>Другая причина (код ошибки other)</li>\n</ul>\n",
-          "enum" : [ "userNotFound", "needConfirmation", "blocked", "other" ]
+          "description" : "Код ошибки при бронировании автомобиля. Коды ошибок:\n<ul>\n<li>Пользователь не зарегистрирован в системе (код ошибки userNotFound)</li>\n<li>Пользователь не завершил процедуру регистрации (код ошибки registrationNotComplited). Например: не добавлена банковская карта, не завершена процедура верификации, требуются другие действия для завершения регистрации в мобильном приложении</li>\n<li>Пользователь заблокирован (код ошибки blocked)</li>\n<li>Другая причина (код ошибки other)</li>\n</ul>\n",
+          "enum" : [ "userNotFound", "registrationNotComplited", "blocked", "other" ]
         }
       }
     },
