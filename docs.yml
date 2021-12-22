@@ -367,9 +367,6 @@ definitions:
         description: "Информация об автомобиле"
         required: true
         $ref: "#/definitions/RideCarEntity"
-      waiting:
-        description: "Информация о времени ожидания"
-        $ref: "#/definitions/RideWaitingInfoEntity"
       offer:
         description: "Информация о используемом тарифе в рамках этой брони"
         $ref: "#/definitions/RideOfferEntity"
@@ -411,7 +408,7 @@ definitions:
         description: "Статус поездки"
         enum:
           - active
-          - waiting
+          - parking
           - finished
           - canceled
           - inspection
@@ -419,17 +416,27 @@ definitions:
   RidePriceEntity:
     type: "object"
     properties:
+      freeParkingTimeUntil:
+        type: "integer"
+        description: "Время в формате timestamp (секунды) до которого время ожидания является бесплатным"
       parkingTime:
-        type: "number"
+        type: "integer"
         description: "Длительность ожидания в секундах"
         example: 180
       parkingPrice:
-        type: "number"
+        type: "integer"
         description: "Стоимость за ожидание в копейках"
         example: 799
       ridingPrice:
-        type: "number"
+        type: "integer"
         description: "Итоговая стоимость поездки в копейках"
+        example: 799
+      freeInspectionTimeUntil:
+        type: "integer"
+        description: "Время в формате timestamp (секунды) до которого время режима инспекции автомобиля является бесплатным"
+      inspectionPrice:
+        type: "integer"
+        description: "Итоговая стоимость за инспектирование автомобиля в копейках"
         example: 799
 
   RideCarEntity:
@@ -463,17 +470,6 @@ definitions:
       wink:
         type: "boolean"
         description: "Доступна возможность удалённо «помигать» автомобилем"
-
-  RideWaitingInfoEntity:
-    type: "object"
-    properties:
-      freeUntil:
-        type: "integer"
-        description: "Время в формате timestamp (секунды) до которого время ожидания является бесплатным"
-      pricePerMin:
-        type: "number"
-        description: "Стоимость минуты ожидания в копейках"
-        example: 255
 
   TokenEntity:
     type: "object"
@@ -594,24 +590,21 @@ definitions:
         description: "Название тарифа"
         example: "Поминутный"
       usagePrice:
-        type: number
+        type: "integer"
         description: Стоимость посадки в копейках
         example: 10055
       holdAmount:
-        type: number
+        type: "integer"
         description: Сумма предсписания в копейках
         example: 20255
       parkingSumPerMin:
-        type: number
+        type: "integer"
         description: "Стоимость тарифа для режима ожидания в копейках"
         example: 10055
       ridingSumPerMin:
-        type: number
+        type: "integer"
         description: "Стоимость тарифа для режима поездки в копейках"
         example: 10055
-      freeWaitingTime:
-        type: integer
-        description: "Время бесплатного ожидания в минутах. Если бесплатного времени ожидания не предусмотрено, следует пустое значение (null)."
 
   OfferRangeEntity:
     type: "object"
@@ -631,35 +624,41 @@ definitions:
         description: "Название тарифа"
         example: "Поминутный"
       usagePrice:
-        type: number
+        type: "integer"
         description: Стоимость посадки в копейках
         example: 10055
       holdAmount:
-        type: number
+        type: "integer"
         description: Сумма предсписания в копейках
         example: 20255
       offerParking:
         description: "Стоимость тарифа для режима ожидания"
         $ref: "#/definitions/OfferRangePriceEntity"
+      freeParkingTime:
+        type: "integer"
+        description: "Время бесплатного ожидания в секундах. Если бесплатного времени ожидания не предусмотрено, следует пустое значение (null)."
       offerRiding:
         description: "Стоимость тарифа для режима поездки"
         $ref: "#/definitions/OfferRangePriceEntity"
-      freeWaitingTime:
+      freeInspectionTime:
         type: "integer"
-        description: "Время бесплатного ожидания в минутах. Если бесплатного времени ожидания не предусмотрено, следует пустое значение (null)."
+        description: "Время бесплатного времени для осмотра автомобиля в секундах. Если бесплатного времени ожидания не предусмотрено, следует пустое значение (null)."
+      inspectionPricePerMin:
+        type: "integer"
+        description: "Стоимость минуты платного осмотра автомобиля после истёкшего времени бесплатного осмотра (поле freeInspectionTime). В случае если осмотр автомобиля бесплатный и без ограничения по времени - следует передать null в полях freeInspectionTime, inspectionPricePerMin."
       validUntil:
-        type: number
+        type: "integer"
         description: "Время в timestamp (секунды), до которого дейсвителен это предложение"
 
   OfferRangePriceEntity:
     type: "object"
     properties:
       min:
-        type: "number"
+        type: "integer"
         description: "Минимальная стоимость в копейках"
         example: 799
       max:
-        type: "number"
+        type: "integer"
         description: "Максимальная стоимость в копейках"
         example: 1099
 
