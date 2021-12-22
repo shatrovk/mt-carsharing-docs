@@ -371,10 +371,6 @@
           "description" : "Информация об автомобиле",
           "$ref" : "#/definitions/RideCarEntity"
         },
-        "waiting" : {
-          "description" : "Информация о времени ожидания",
-          "$ref" : "#/definitions/RideWaitingInfoEntity"
-        },
         "offer" : {
           "description" : "Информация о используемом тарифе в рамках этой брони",
           "$ref" : "#/definitions/RideOfferEntity"
@@ -421,27 +417,40 @@
         "status" : {
           "type" : "string",
           "description" : "Статус поездки",
-          "enum" : [ "active", "waiting", "finished", "canceled", "inspection" ]
+          "enum" : [ "active", "parking", "finished", "canceled", "inspection" ]
         }
       }
     },
     "RidePriceEntity" : {
       "type" : "object",
       "properties" : {
+        "freeParkingTimeUntil" : {
+          "type" : "integer",
+          "description" : "Время в формате timestamp (секунды) до которого время ожидания является бесплатным"
+        },
         "parkingTime" : {
-          "type" : "number",
-          "example" : 180.0,
+          "type" : "integer",
+          "example" : 180,
           "description" : "Длительность ожидания в секундах"
         },
         "parkingPrice" : {
-          "type" : "number",
-          "example" : 799.0,
+          "type" : "integer",
+          "example" : 799,
           "description" : "Стоимость за ожидание в копейках"
         },
         "ridingPrice" : {
-          "type" : "number",
-          "example" : 799.0,
+          "type" : "integer",
+          "example" : 799,
           "description" : "Итоговая стоимость поездки в копейках"
+        },
+        "freeInspectionTimeUntil" : {
+          "type" : "integer",
+          "description" : "Время в формате timestamp (секунды) до которого время режима инспекции автомобиля является бесплатным"
+        },
+        "inspectionPrice" : {
+          "type" : "integer",
+          "example" : 799,
+          "description" : "Итоговая стоимость за инспектирование автомобиля в копейках"
         }
       }
     },
@@ -479,20 +488,6 @@
         "wink" : {
           "type" : "boolean",
           "description" : "Доступна возможность удалённо «помигать» автомобилем"
-        }
-      }
-    },
-    "RideWaitingInfoEntity" : {
-      "type" : "object",
-      "properties" : {
-        "freeUntil" : {
-          "type" : "integer",
-          "description" : "Время в формате timestamp (секунды) до которого время ожидания является бесплатным"
-        },
-        "pricePerMin" : {
-          "type" : "number",
-          "example" : 255.0,
-          "description" : "Стоимость минуты ожидания в копейках"
         }
       }
     },
@@ -622,28 +617,24 @@
           "description" : "Название тарифа"
         },
         "usagePrice" : {
-          "type" : "number",
-          "example" : 10055.0,
+          "type" : "integer",
+          "example" : 10055,
           "description" : "Стоимость посадки в копейках"
         },
         "holdAmount" : {
-          "type" : "number",
-          "example" : 20255.0,
+          "type" : "integer",
+          "example" : 20255,
           "description" : "Сумма предсписания в копейках"
         },
         "parkingSumPerMin" : {
-          "type" : "number",
-          "example" : 10055.0,
+          "type" : "integer",
+          "example" : 10055,
           "description" : "Стоимость тарифа для режима ожидания в копейках"
         },
         "ridingSumPerMin" : {
-          "type" : "number",
-          "example" : 10055.0,
-          "description" : "Стоимость тарифа для режима поездки в копейках"
-        },
-        "freeWaitingTime" : {
           "type" : "integer",
-          "description" : "Время бесплатного ожидания в минутах. Если бесплатного времени ожидания не предусмотрено, следует пустое значение (null)."
+          "example" : 10055,
+          "description" : "Стоимость тарифа для режима поездки в копейках"
         }
       },
       "description" : "<p>Описание тарифа пользования автомобилем. В случае, если пользозователь неавторизован, есть возможность\nпередавать стоимость в диапазоне от...до (см. поля min/max в сущности OfferRangeEntity). </p>\n<p>Для авторизованного пользователя в поля min/max следует передавать одинаковую стоимость.</p>\n"
@@ -664,29 +655,37 @@
           "description" : "Название тарифа"
         },
         "usagePrice" : {
-          "type" : "number",
-          "example" : 10055.0,
+          "type" : "integer",
+          "example" : 10055,
           "description" : "Стоимость посадки в копейках"
         },
         "holdAmount" : {
-          "type" : "number",
-          "example" : 20255.0,
+          "type" : "integer",
+          "example" : 20255,
           "description" : "Сумма предсписания в копейках"
         },
         "offerParking" : {
           "description" : "Стоимость тарифа для режима ожидания",
           "$ref" : "#/definitions/OfferRangePriceEntity"
         },
+        "freeParkingTime" : {
+          "type" : "integer",
+          "description" : "Время бесплатного ожидания в секундах. Если бесплатного времени ожидания не предусмотрено, следует пустое значение (null)."
+        },
         "offerRiding" : {
           "description" : "Стоимость тарифа для режима поездки",
           "$ref" : "#/definitions/OfferRangePriceEntity"
         },
-        "freeWaitingTime" : {
+        "freeInspectionTime" : {
           "type" : "integer",
-          "description" : "Время бесплатного ожидания в минутах. Если бесплатного времени ожидания не предусмотрено, следует пустое значение (null)."
+          "description" : "Время бесплатного времени для осмотра автомобиля в секундах. Если бесплатного времени ожидания не предусмотрено, следует пустое значение (null)."
+        },
+        "inspectionPricePerMin" : {
+          "type" : "integer",
+          "description" : "Стоимость минуты платного осмотра автомобиля после истёкшего времени бесплатного осмотра (поле freeInspectionTime). В случае если осмотр автомобиля бесплатный и без ограничения по времени - следует передать null в полях freeInspectionTime, inspectionPricePerMin."
         },
         "validUntil" : {
-          "type" : "number",
+          "type" : "integer",
           "description" : "Время в timestamp (секунды), до которого дейсвителен это предложение"
         }
       },
@@ -696,13 +695,13 @@
       "type" : "object",
       "properties" : {
         "min" : {
-          "type" : "number",
-          "example" : 799.0,
+          "type" : "integer",
+          "example" : 799,
           "description" : "Минимальная стоимость в копейках"
         },
         "max" : {
-          "type" : "number",
-          "example" : 1099.0,
+          "type" : "integer",
+          "example" : 1099,
           "description" : "Максимальная стоимость в копейках"
         }
       }

@@ -370,6 +370,12 @@ definitions:
       offer:
         description: "Информация о используемом тарифе в рамках этой брони"
         $ref: "#/definitions/RideOfferEntity"
+      waiting:
+        description: "Информация о времени ожидания"
+        $ref: "#/definitions/RideWaitingInfoEntity"
+      inspection:
+        description: "Информация об инспектировании автомобиля"
+        $ref: "#/definitions/RideInspectionInfoEntity"
       pointStart:
         required: true
         description: "Точка старта поездки (откуда поездка была начата - по сути является точкой автомобиля при брони)"
@@ -400,6 +406,7 @@ definitions:
         type: number
         description: "Дистанция в метрах, которую проехал пользователь в рамках поездки"
         example: 120
+
       price:
         $ref: "#/definitions/RidePriceEntity"
       status:
@@ -412,6 +419,27 @@ definitions:
           - finished
           - canceled
           - inspection
+
+  RideWaitingInfoEntity:
+    type: "object"
+    properties:
+      freeUntil:
+        type: "integer"
+        description: "Время в формате timestamp (секунды) до которого время ожидания является бесплатным"
+      pricePerMin:
+        type: "number"
+        description: "Стоимость минуты ожидания в копейках"
+        example: 255
+
+  RideInspectionInfoEntity:
+    type: "object"
+    properties:
+      freeUntil:
+        type: "integer"
+        description: "Время в формате timestamp (секунды) до которого время режима осмотра является бесплатным"
+      pricePerMin:
+        type: "integer"
+        description: "Стоимость минуты осмотра автомобиля после бесплатного времени в копейках"
 
   RidePriceEntity:
     type: "object"
@@ -431,9 +459,6 @@ definitions:
         type: "integer"
         description: "Итоговая стоимость поездки в копейках"
         example: 799
-      freeInspectionTimeUntil:
-        type: "integer"
-        description: "Время в формате timestamp (секунды) до которого время режима инспекции автомобиля является бесплатным"
       inspectionPrice:
         type: "integer"
         description: "Итоговая стоимость за инспектирование автомобиля в копейках"
