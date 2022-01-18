@@ -280,17 +280,75 @@ paths:
       security:
         - userTokenSec: [ ]
 
-  /ride/{id}/cancel:
+  /ride/{id}/cancel/request:
     post:
       tags:
         - "carsharing"
-      summary: "Отмена брони"
+      summary: "Запрос на отмену брони"
       description: |
+        <p>Метод используется для проверки возможности отмены брони и получения сообщения, которое пользователь увидит
+        на подтверждающем отмену шаге.</p>
+      operationId: "rideCancelRequest"
+      consumes:
+        - "application/json"
+      produces:
+        - "application/json"
+      parameters:
+        - name: "id"
+          in: "path"
+          description: "ID поездки"
+          required: true
+          type: "string"
+        - in: "body"
+          name: "body"
+          description: "Данные для запроса на отмену брони"
+          required: true
+          schema:
+            $ref: "#/definitions/RideCancelRequestDto"
+        - name: Accept-Language
+          in: header
+          description: Выбранный язык пользователя в приложении МТ
+          required: true
+          type: string
+          enum:
+            - ru
+            - en
+            - fr
+            - de
+            - es
+            - cn
+      responses:
+        "200":
+          description: "Успех операции"
+          schema:
+            $ref: "#/definitions/RideConfirmEntity"
+        "400":
+          description: "Ошибка при бронировании"
+          schema:
+            $ref: "#/definitions/ErrorRideCancelEntity"
+        "401":
+          description: "Переданный токен невалиден"
+      security:
+        - userTokenSec: [ ]
+
+  /ride/{id}/cancel/confirm:
+    post:
+      tags:
+        - "carsharing"
+      summary: "Подтверждение отмены брони"
+      description: |
+        <p>
+        Метод используется для подтверждения отмены брони автомобиля.
+        В метод передаётся ID запроса на отмену брони, который
+        предварительно был получен из метода /ride/{id}/cancel/request.
+        </p>
+        <p>
         В случае, если на стороне оператора каршеринга отмена не выполняется в момент обращения к методу API,
         метод возврает статус canceling. В этом случае на стороне МТ с периодиностью в 3 секунды будет
-        опрашиваться API оператора по ID брони для получения подтверждения
-        отмены (перевод поездки в статус <i>canceled</i>).
-      operationId: "rideCancel"
+        опрашиваться API метод получения брони по ID для получения подтверждения
+        отмены (перевод поездки в статус canceled).
+        </p>
+      operationId: "rideCancelConfirm"
       consumes:
         - "application/json"
       produces:
@@ -306,7 +364,7 @@ paths:
           description: "Данные для отмены брони"
           required: true
           schema:
-            $ref: "#/definitions/RideCancelDto"
+            $ref: "#/definitions/RideCancelConfirmDto"
         - name: Accept-Language
           in: header
           description: Выбранный язык пользователя в приложении МТ
@@ -454,14 +512,19 @@ definitions:
       userLocation:
         description: "Позиция пользователя в момент оформления заказа"
         $ref: "#/definitions/LocationDto"
-        required: true
 
-  RideCancelDto:
+  RideCancelRequestDto:
     type: "object"
     properties:
       userLocation:
         $ref: "#/definitions/LocationDto"
-        required: true
+
+  RideCancelConfirmDto:
+    type: "object"
+    properties:
+      id:
+        type: "string"
+        description: "ID запроса на отмену, который получен из метода /ride/{id}/cancel/request"
 
   ActiveRideEntity:
     type: "object"
@@ -475,7 +538,7 @@ definitions:
           - "serviceRide"
       ride:
         description: "Сущность активной поездки пользователя. Может быть null во всех случаях, кроме случая активной поездки, которая создана пользователем через МТ."
-        $ref: "#/definitions/RideCarEntity"
+        $ref: "#/definitions/RideEntity"
       deepLink:
         type: "string"
         description: "Диплинк для перехода в приложение оператора каршеринга. Заполняется в случае, если у пользователя есть активная поездка, которая создана на стороне оператора."
@@ -490,9 +553,6 @@ definitions:
       deepLink:
         type: "string"
         description: "Диплинк для перехода в приложение оператора каршеринга"
-      cancelMessage:
-        type: "string"
-        description: "Сообщение, которое получит пользователь на подтверждающем экране при отмене брони. Поле может быть null, если у оператора каршеринга нет необходимости о чём-то предупредить пользователя при отмене брони."
       specialMessage:
         type: "string"
         description: "Сообщение, которое можно вывести в карточке автомобиля (при необходимости). Текст сообщения следует сформировать исходя из языковых настроек пользователя."
@@ -637,9 +697,25 @@ definitions:
         description: "Итоговая стоимость за инспектирование автомобиля (в копейках)"
         example: 799
 
+  RideConfirmEntity:
+    type: "object"
+    properties:
+      id:
+        type: "string"
+        description: "ID подтверждения отмены, который необходим отправить в метод /ride/{id}/cancel-confirm"
+      message:
+        type: "string"
+        description: "Сообщение, которое получит пользователь на подтверждающем экране при отмене брони. Поле может быть null, если у оператора каршеринга нет необходимости о чём-то предупредить пользователя при отмене брони."
+
   RideDriveInfoEntity:
     type: "object"
     properties:
+      status:
+        description: "Статус расчёта стоимости. Если стоимость поездки не окончательная и требуется время для точного расчёта - в поле следует передать значение calculation. В случае если стоимость поездки расчитана в окончательном вариенте, значение поля - calculated."
+        type: "string"
+        enum:
+          - "calculated"
+          - "calculation"
       distance:
         type: number
         description: "Дистанция в метрах, которую проехал пользователь в рамках поездки"
@@ -805,12 +881,15 @@ definitions:
         type: "integer"
         description: Сумма предсписания в копейках
         example: 20255
-      offerParking:
-        description: "Стоимость тарифа для режима ожидания"
-        $ref: "#/definitions/OfferRangePriceEntity"
-      freeParkingTime:
+      freeWaitingTime:
         type: "integer"
-        description: "Время бесплатного ожидания в секундах. Если бесплатного времени ожидания не предусмотрено, следует пустое значение (null)."
+        description: "Время бесплатного ожидания брони в секундах. Если бесплатного времени ожидания не предусмотрено, следует пустое значение (null)."
+      offerWaiting:
+        description: "Стоимость минуты ожидания брони"
+        $ref: "#/definitions/OfferRangePriceEntity"
+      offerParking:
+        description: "Стоимость тарифа для режима парковки автомобиля"
+        $ref: "#/definitions/OfferRangePriceEntity"
       offerRiding:
         description: "Стоимость тарифа для режима поездки"
         $ref: "#/definitions/OfferRangePriceEntity"
@@ -995,8 +1074,10 @@ definitions:
             <li>rideNotFound - поездка с переданным ID не найдена;</li>
             <li>rideAlreadyCanceled - поездка с переданным ID уже отменена;</li>
             <li>rideInProgress - поездку нельзя отменить, т.к. поездка в данный момент активна</li>
+            <li>invalidRequestId - переданный ID отмены невалиден</li>
           </ul>
         enum:
           - rideNotFound
           - rideAlreadyCanceled
           - rideInProgress
+          - invalidRequestId

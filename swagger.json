@@ -237,12 +237,64 @@
         }
       }
     },
-    "/ride/{id}/cancel" : {
+    "/ride/{id}/cancel/request" : {
       "post" : {
         "tags" : [ "carsharing" ],
-        "summary" : "Отмена брони",
-        "description" : "В случае, если на стороне оператора каршеринга отмена не выполняется в момент обращения к методу API,\nметод возврает статус canceling. В этом случае на стороне МТ с периодиностью в 3 секунды будет\nопрашиваться API оператора по ID брони для получения подтверждения\nотмены (перевод поездки в статус <i>canceled</i>).\n",
-        "operationId" : "rideCancel",
+        "summary" : "Запрос на отмену брони",
+        "description" : "<p>Метод используется для проверки возможности отмены брони и получения сообщения, которое пользователь увидит\nна подтверждающем отмену шаге.</p>\n",
+        "operationId" : "rideCancelRequest",
+        "consumes" : [ "application/json" ],
+        "produces" : [ "application/json" ],
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "description" : "ID поездки",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "in" : "body",
+          "name" : "body",
+          "description" : "Данные для запроса на отмену брони",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/definitions/RideCancelRequestDto"
+          }
+        }, {
+          "name" : "Accept-Language",
+          "in" : "header",
+          "description" : "Выбранный язык пользователя в приложении МТ",
+          "required" : true,
+          "type" : "string",
+          "enum" : [ "ru", "en", "fr", "de", "es", "cn" ]
+        } ],
+        "security" : [ {
+          "userTokenSec" : [ ]
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Успех операции",
+            "schema" : {
+              "$ref" : "#/definitions/RideConfirmEntity"
+            }
+          },
+          "400" : {
+            "description" : "Ошибка при бронировании",
+            "schema" : {
+              "$ref" : "#/definitions/ErrorRideCancelEntity"
+            }
+          },
+          "401" : {
+            "description" : "Переданный токен невалиден"
+          }
+        }
+      }
+    },
+    "/ride/{id}/cancel/confirm" : {
+      "post" : {
+        "tags" : [ "carsharing" ],
+        "summary" : "Подтверждение отмены брони",
+        "description" : "<p>\nМетод используется для подтверждения отмены брони автомобиля.\nВ метод передаётся ID запроса на отмену брони, который\nпредварительно был получен из метода /ride/{id}/cancel/request.\n</p>\n<p>\nВ случае, если на стороне оператора каршеринга отмена не выполняется в момент обращения к методу API,\nметод возврает статус canceling. В этом случае на стороне МТ с периодиностью в 3 секунды будет\nопрашиваться API метод получения брони по ID для получения подтверждения\nотмены (перевод поездки в статус canceled).\n</p>\n",
+        "operationId" : "rideCancelConfirm",
         "consumes" : [ "application/json" ],
         "produces" : [ "application/json" ],
         "parameters" : [ {
@@ -257,7 +309,7 @@
           "description" : "Данные для отмены брони",
           "required" : true,
           "schema" : {
-            "$ref" : "#/definitions/RideCancelDto"
+            "$ref" : "#/definitions/RideCancelConfirmDto"
           }
         }, {
           "name" : "Accept-Language",
@@ -402,11 +454,20 @@
         }
       }
     },
-    "RideCancelDto" : {
+    "RideCancelRequestDto" : {
       "type" : "object",
       "properties" : {
         "userLocation" : {
           "$ref" : "#/definitions/LocationDto"
+        }
+      }
+    },
+    "RideCancelConfirmDto" : {
+      "type" : "object",
+      "properties" : {
+        "id" : {
+          "type" : "string",
+          "description" : "ID запроса на отмену, который получен из метода /ride/{id}/cancel/request"
         }
       }
     },
@@ -420,7 +481,7 @@
         },
         "ride" : {
           "description" : "Сущность активной поездки пользователя. Может быть null во всех случаях, кроме случая активной поездки, которая создана пользователем через МТ.",
-          "$ref" : "#/definitions/RideCarEntity"
+          "$ref" : "#/definitions/RideEntity"
         },
         "deepLink" : {
           "type" : "string",
@@ -594,9 +655,27 @@
         }
       }
     },
+    "RideConfirmEntity" : {
+      "type" : "object",
+      "properties" : {
+        "id" : {
+          "type" : "string",
+          "description" : "ID подтверждения отмены, который необходим отправить в метод /ride/{id}/cancel-confirm"
+        },
+        "message" : {
+          "type" : "string",
+          "description" : "Сообщение, которое получит пользователь на подтверждающем экране при отмене брони. Поле может быть null, если у оператора каршеринга нет необходимости о чём-то предупредить пользователя при отмене брони."
+        }
+      }
+    },
     "RideDriveInfoEntity" : {
       "type" : "object",
       "properties" : {
+        "status" : {
+          "type" : "string",
+          "description" : "Статус расчёта стоимости. Если стоимость поездки не окончательная и требуется время для точного расчёта - в поле следует передать значение calculation. В случае если стоимость поездки расчитана в окончательном вариенте, значение поля - calculated.",
+          "enum" : [ "calculated", "calculation" ]
+        },
         "distance" : {
           "type" : "number",
           "example" : 120.0,
@@ -778,13 +857,17 @@
           "example" : 20255,
           "description" : "Сумма предсписания в копейках"
         },
-        "offerParking" : {
-          "description" : "Стоимость тарифа для режима ожидания",
+        "freeWaitingTime" : {
+          "type" : "integer",
+          "description" : "Время бесплатного ожидания брони в секундах. Если бесплатного времени ожидания не предусмотрено, следует пустое значение (null)."
+        },
+        "offerWaiting" : {
+          "description" : "Стоимость минуты ожидания брони",
           "$ref" : "#/definitions/OfferRangePriceEntity"
         },
-        "freeParkingTime" : {
-          "type" : "integer",
-          "description" : "Время бесплатного ожидания в секундах. Если бесплатного времени ожидания не предусмотрено, следует пустое значение (null)."
+        "offerParking" : {
+          "description" : "Стоимость тарифа для режима парковки автомобиля",
+          "$ref" : "#/definitions/OfferRangePriceEntity"
         },
         "offerRiding" : {
           "description" : "Стоимость тарифа для режима поездки",
@@ -952,8 +1035,8 @@
         },
         "errorCode" : {
           "type" : "string",
-          "description" : "Код ошибки при бронировании автомобиля. Коды ошибок:\n<ul>\n  <li>rideNotFound - поездка с переданным ID не найдена;</li>\n  <li>rideAlreadyCanceled - поездка с переданным ID уже отменена;</li>\n  <li>rideInProgress - поездку нельзя отменить, т.к. поездка в данный момент активна</li>\n</ul>\n",
-          "enum" : [ "rideNotFound", "rideAlreadyCanceled", "rideInProgress" ]
+          "description" : "Код ошибки при бронировании автомобиля. Коды ошибок:\n<ul>\n  <li>rideNotFound - поездка с переданным ID не найдена;</li>\n  <li>rideAlreadyCanceled - поездка с переданным ID уже отменена;</li>\n  <li>rideInProgress - поездку нельзя отменить, т.к. поездка в данный момент активна</li>\n  <li>invalidRequestId - переданный ID отмены невалиден</li>\n</ul>\n",
+          "enum" : [ "rideNotFound", "rideAlreadyCanceled", "rideInProgress", "invalidRequestId" ]
         }
       }
     }
