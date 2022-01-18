@@ -237,7 +237,7 @@
         }
       }
     },
-    "/ride/{id}/cancel/request" : {
+    "/ride/{id}/cancel-request" : {
       "post" : {
         "tags" : [ "carsharing" ],
         "summary" : "Запрос на отмену брони",
@@ -274,7 +274,7 @@
           "200" : {
             "description" : "Успех операции",
             "schema" : {
-              "$ref" : "#/definitions/RideConfirmEntity"
+              "$ref" : "#/definitions/RideCancelConfirmEntity"
             }
           },
           "400" : {
@@ -289,7 +289,7 @@
         }
       }
     },
-    "/ride/{id}/cancel/confirm" : {
+    "/ride/{id}/cancel-confirm" : {
       "post" : {
         "tags" : [ "carsharing" ],
         "summary" : "Подтверждение отмены брони",
@@ -655,7 +655,7 @@
         }
       }
     },
-    "RideConfirmEntity" : {
+    "RideCancelConfirmEntity" : {
       "type" : "object",
       "properties" : {
         "id" : {

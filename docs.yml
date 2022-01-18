@@ -280,7 +280,7 @@ paths:
       security:
         - userTokenSec: [ ]
 
-  /ride/{id}/cancel/request:
+  /ride/{id}/cancel-request:
     post:
       tags:
         - "carsharing"
@@ -321,7 +321,7 @@ paths:
         "200":
           description: "Успех операции"
           schema:
-            $ref: "#/definitions/RideConfirmEntity"
+            $ref: "#/definitions/RideCancelConfirmEntity"
         "400":
           description: "Ошибка при бронировании"
           schema:
@@ -331,7 +331,7 @@ paths:
       security:
         - userTokenSec: [ ]
 
-  /ride/{id}/cancel/confirm:
+  /ride/{id}/cancel-confirm:
     post:
       tags:
         - "carsharing"
@@ -697,7 +697,7 @@ definitions:
         description: "Итоговая стоимость за инспектирование автомобиля (в копейках)"
         example: 799
 
-  RideConfirmEntity:
+  RideCancelConfirmEntity:
     type: "object"
     properties:
       id:
