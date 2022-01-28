@@ -6,13 +6,6 @@ info:
     <p>Доступ к API каршеринга должен быть ограничен списком разрешённых IP адресов МТ.</p>
     <p>Доступ к API на стороне МТ будет ограничен списком IP адресов каршеринг сервисов, а также уникальным API ключом для каждого каршеринга. Данный API ключ необходимо передавать в HTTP заголовке Api-Key.</p>
     <p>Для работы с API каршеринга, МТ должен получить API токен для каждого пользователя (см. ниже метод POST /token). Токен передаётся в каждый метод в HTTP заголовке User-Token.</p>
-    <h2>&#9888; Вопросы на проработку</h2>
-    <p>
-      <ol>
-      <li>Согласовать список возможных причин, по которым пользователь не может забронировать текущий автомобиль (поле forbiddenRentReason)</li>
-      <li>Требуется согласовать список возможных ошибок с операторами при брони автомобиля (ErrorRideCreationEntity)</li>
-    </ol>
-    </p>
   title: "MT + сервисы каршеринга"
 tags:
   - name: "carsharing"
@@ -74,7 +67,9 @@ paths:
       summary: "Получение текста политики конфиденциальности и правил сервиса"
       description: |
         <p>Метод возвращает текст правил и политики конфиденциальности сервиса, которые пользователь должен принять при работе с сервисом.</p>
-        <p>Предусмотрен параметр updatedAt, в котором необходимо передавать дату последнего обновления текста. Данное поле необходимо, чтобы получить повторное согласие пользователя в случае обновления правил.</p>
+        <p>Предусмотрен параметр version, в котором необходимо передавать дату последнего обновления текста. Данное поле необходимо, чтобы получить повторное согласие пользователя в случае обновления правил.</p>
+        <p>В качестве версии оферты можно передавать уникальное строковое значение, которое будет сравниваться с предыдущим значением, которое было получено и сохранено в МТ.
+        Например, таким значением может выступать версия оферты (v1, v2 и тд) или дата обновления оферты на стороне оператора.</p>
       operationId: "policyGet"
       parameters:
         - name: Accept-Language
@@ -187,7 +182,7 @@ paths:
         "200":
           description: "Успех операции"
           schema:
-            $ref: "#/definitions/ActiveRideEntity"
+            $ref: "#/definitions/ActiveRideInfoEntity"
         "401":
           description: "Переданный токен невалиден"
       security:
@@ -229,7 +224,7 @@ paths:
         "200":
           description: "Успех операции"
           schema:
-            $ref: "#/definitions/RideEntity"
+            $ref: "#/definitions/RideCreatedEntity"
         "400":
           description: "Ошибка при бронировании"
           schema:
@@ -323,7 +318,7 @@ paths:
           schema:
             $ref: "#/definitions/RideCancelConfirmEntity"
         "400":
-          description: "Ошибка при бронировании"
+          description: "Ошибка при отмене брони"
           schema:
             $ref: "#/definitions/ErrorRideCancelEntity"
         "401":
@@ -492,13 +487,23 @@ securityDefinitions:
 definitions:
   TokenDto:
     type: "object"
+    required:
+      - phoneNum
     properties:
       phoneNum:
         type: "integer"
         description: "Номер телефона в формате <i>70000000000</i> (только цифры)"
+      birthday:
+        type: "string"
+        description: "Дата рождения пользователя в формате YYYY-MM-DD. Актуально для некоторых операторов, у которых при выдаче токена необходимо сверять дату рождения пользователя."
 
   RideDto:
     type: "object"
+    required:
+      - carId
+      - offerId
+      - policyVersion
+      - userLocation
     properties:
       carId:
         type: "string"
@@ -515,6 +520,8 @@ definitions:
 
   RideCancelRequestDto:
     type: "object"
+    required:
+      - userLocation
     properties:
       userLocation:
         $ref: "#/definitions/LocationDto"
@@ -522,33 +529,46 @@ definitions:
   RideCancelConfirmDto:
     type: "object"
     properties:
-      id:
+      confirmationRequestId:
         type: "string"
-        description: "ID запроса на отмену, который получен из метода /ride/{id}/cancel/request"
+        description: "ID запроса на отмену, который получен из метода /ride/{id}/cancel/request. Поле может быть null (см. описание метода /ride/{id}/cancel-request)"
 
-  ActiveRideEntity:
+  ActiveRideInfoEntity:
     type: "object"
+    required:
+      - status
+      - deepLink
     properties:
       status:
         description: ""
         type: "string"
         enum:
           - "active"
-          - "notFound"
           - "serviceRide"
       ride:
         description: "Сущность активной поездки пользователя. Может быть null во всех случаях, кроме случая активной поездки, которая создана пользователем через МТ."
-        $ref: "#/definitions/RideEntity"
+        $ref: "#/definitions/RideActiveEntity"
       deepLink:
         type: "string"
         description: "Диплинк для перехода в приложение оператора каршеринга. Заполняется в случае, если у пользователя есть активная поездка, которая создана на стороне оператора."
 
-  RideEntity:
+  RideActiveEntity:
     type: "object"
+    required:
+      - id
+      - deepLink
+      - car
+      - offer
+      - waitingInfo
+      - inspectionInfo
+      - drivingInfo
+      - pointStart
+      - createdAt
+      - startedAt
+      - status
     properties:
       id:
         description: "ID поездки"
-        required: true
         type: "string"
       deepLink:
         type: "string"
@@ -556,37 +576,75 @@ definitions:
       specialMessage:
         type: "string"
         description: "Сообщение, которое можно вывести в карточке автомобиля (при необходимости). Текст сообщения следует сформировать исходя из языковых настроек пользователя."
-      finesDescription:
-        type: "string"
       car:
         description: "Информация об автомобиле"
-        required: true
         $ref: "#/definitions/RideCarEntity"
       offer:
-        required: true
         description: "Информация о используемом тарифе в рамках этой брони"
         $ref: "#/definitions/OfferRangeEntity"
       waitingInfo:
-        required: true
         description: "Информация о времени ожидания"
         $ref: "#/definitions/RideWaitingInfoEntity"
       inspectionInfo:
-        required: true
         description: "Информация об инспектировании автомобиля"
         $ref: "#/definitions/RideInspectionInfoEntity"
       drivingInfo:
-        required: true
         description: "Информация о времени ожидания"
         $ref: "#/definitions/RideDriveInfoEntity"
       pointStart:
-        required: true
+        description: "Точка старта поездки (откуда поездка была начата - по сути является точкой автомобиля при брони)"
+        $ref: "#/definitions/LocationEntity"
+      createdAt:
+        type: "integer"
+        description: "Время создания брони в формате timestamp (секунды)"
+        example: 1637917148
+      startedAt:
+        type: "integer"
+        description: "Время старта поездки (пользователь осмотрел автомобиль и начал аренду) в формате timestamp (секунды). Может быть null, если аренда ещё не начата."
+        example: 1637917148
+      status:
+        type: "string"
+        description: "Статус поездки"
+        enum:
+          - active
+          - parking
+          - canceling
+          - inspection
+
+  RideEntity:
+    type: "object"
+    properties:
+      id:
+        description: "ID поездки"
+        type: "string"
+      deepLink:
+        type: "string"
+        description: "Диплинк для перехода в приложение оператора каршеринга"
+      specialMessage:
+        type: "string"
+        description: "Сообщение, которое можно вывести в карточке автомобиля (при необходимости). Текст сообщения следует сформировать исходя из языковых настроек пользователя."
+      car:
+        description: "Информация об автомобиле"
+        $ref: "#/definitions/RideCarEntity"
+      offer:
+        description: "Информация о используемом тарифе в рамках этой брони"
+        $ref: "#/definitions/OfferRangeEntity"
+      waitingInfo:
+        description: "Информация о времени ожидания"
+        $ref: "#/definitions/RideWaitingInfoEntity"
+      inspectionInfo:
+        description: "Информация об инспектировании автомобиля"
+        $ref: "#/definitions/RideInspectionInfoEntity"
+      drivingInfo:
+        description: "Информация о времени ожидания"
+        $ref: "#/definitions/RideDriveInfoEntity"
+      pointStart:
         description: "Точка старта поездки (откуда поездка была начата - по сути является точкой автомобиля при брони)"
         $ref: "#/definitions/LocationEntity"
       pointFinish:
-        description: "Точка завершения поездки"
+        description: "Точка завершения поездки. Может быть null, если поездка ещё не завершена."
         $ref: "#/definitions/LocationEntity"
       createdAt:
-        required: true
         type: "integer"
         description: "Время создания брони в формате timestamp (секунды)"
         example: 1637917148
@@ -603,7 +661,6 @@ definitions:
         description: "Время завершения поездки в формате timestamp (секунды). Может быть null, если поездка ещё не завершена."
         example: 1637917148
       status:
-        required: true
         type: "string"
         description: "Статус поездки"
         enum:
@@ -616,21 +673,28 @@ definitions:
 
   RideCreatedEntity:
     type: "object"
+    required:
+      - id
+      - deepLink
+      - car
+      - offer
+      - waiting
+      - inspection
+      - pointStart
+      - createdAt
+      - status
     properties:
       id:
         description: "ID поездки"
-        required: true
         type: "string"
       deepLink:
         type: "string"
-        required: true
         description: "Диплинк для перехода в приложение оператора каршеринга"
       specialMessage:
         type: "string"
         description: "Сообщение, которое можно вывести в карточке автомобиля при необходимости"
       car:
         description: "Информация об автомобиле"
-        required: true
         $ref: "#/definitions/RideCarEntity"
       offer:
         description: "Информация о используемом тарифе в рамках этой брони"
@@ -642,19 +706,13 @@ definitions:
         description: "Информация об инспектировании автомобиля"
         $ref: "#/definitions/RideInspectionInfoEntity"
       pointStart:
-        required: true
         description: "Точка старта поездки (откуда поездка была начата - по сути является точкой автомобиля при брони)"
         $ref: "#/definitions/LocationEntity"
-      pointFinish:
-        description: "Точка завершения поездки"
-        $ref: "#/definitions/LocationEntity"
       createdAt:
-        required: true
         type: "integer"
         description: "Время создания брони в формате timestamp (секунды)"
         example: 1637917148
       status:
-        required: true
         type: "string"
         description: "Статус поездки"
         enum:
@@ -702,7 +760,12 @@ definitions:
     properties:
       id:
         type: "string"
-        description: "ID подтверждения отмены, который необходим отправить в метод /ride/{id}/cancel-confirm"
+        description: |
+          <p>ID подтверждения отмены, который необходим отправить в метод /ride/{id}/cancel-confirm.</p>
+          <p>
+          Поле может быть null, если у оператора каршеринга нет необходимости о чём-то
+          предупредить пользователя при отмене брони. В этом случае будет вызван метод /ride/{id}/cancel-confirm с
+          пустым полем confirmationRequestId в запросе.</p>
       message:
         type: "string"
         description: "Сообщение, которое получит пользователь на подтверждающем экране при отмене брони. Поле может быть null, если у оператора каршеринга нет необходимости о чём-то предупредить пользователя при отмене брони."
@@ -731,28 +794,32 @@ definitions:
 
   RideCarEntity:
     type: "object"
+    required:
+      - fuelCapacity
+      - position
+      - number
+      - model
     properties:
       id:
         type: "string"
-        required: true
       fuelCapacity:
-        required: true
         $ref: "#/definitions/FuelCapacity"
       position:
         $ref: "#/definitions/LocationEntity"
       number:
         type: "string"
-        required: true
         description: "Гос. номер автомобиля"
         example: "у522уу799"
       model:
         type: "string"
-        required: true
         description: "Марка + модель автомобиля"
         example: "BMW 3-series"
 
   TokenEntity:
     type: "object"
+    required:
+      - token
+      - validUntil
     description: |
       Токен конкретного пользователя для работы с API методами.
     properties:
@@ -766,6 +833,9 @@ definitions:
 
   PolicyEntity:
     type: "object"
+    required:
+      - value
+      - version
     properties:
       content:
         type: "string"
@@ -777,6 +847,9 @@ definitions:
 
   FuelCapacity:
     type: "object"
+    required:
+      - value
+      - type
     properties:
       value:
         type: "number"
@@ -790,6 +863,15 @@ definitions:
 
   CarEntity:
     type: "object"
+    required:
+      - id
+      - deepLink
+      - fuelCapacity
+      - carNum
+      - model
+      - zones
+      - location
+      - offer
     properties:
       id:
         type: "string"
@@ -809,8 +891,8 @@ definitions:
         type: "string"
         description: "Марка + модель автомобиля"
         example: "BMW 3-series"
-      availableZoneSet:
-        $ref: "#/definitions/AvailableZoneSetEntity"
+      zones:
+        $ref: "#/definitions/CarZonesEntity"
       location:
         $ref: "#/definitions/LocationEntity"
       insurancePolicy:
@@ -832,6 +914,11 @@ definitions:
           - carAlreadyBooked
           - userDebt
           - other
+      forbiddenRentReasonMessage:
+        type: "string"
+        description: |
+          Сообщение, которое будет выводиться пользователю в случае, если он не может взять этот автомобиль в аренду.
+          Поле следует передавать, в случае если forbiddenRentReason = other.
       offer:
         type: "array"
         description: "Доступные тарифы для автомобиля"
@@ -844,15 +931,19 @@ definitions:
         type: "string"
         description: "Текстовая информация, которая выводится для пользователя в поле с описанием страховки"
 
-  AvailableZoneSetEntity:
+  CarZonesEntity:
     type: object
     properties:
-      id:
+      zones:
+        type: "object"
+        description: "Доступные зоны для автомобиля можно передать в этом поле, если на стороне оператора они не объедены в сет."
+        $ref: "#/definitions/ZoneSetEntity"
+      setId:
         type: "string"
-        description: "ID набора зон"
-      updatedAt:
+        description: "ID набора зон. Может быть null, если функционал набора зон не зайдействова и доступные зоны для автомобиля передаются в поле zones"
+      setUpdatedAt:
         type: "integer"
-        description: "Дата изменения набора данных в timestamp (секунды)"
+        description: "Дата изменения сета зон в timestamp (секунды)"
         example: 1637907497
 
   OfferRangeEntity:
@@ -868,7 +959,7 @@ definitions:
       description:
         type: string
         description: |
-          Подробное описание тарифа с поддержкой html тегов: h1, p, strong, img
+          Подробное описание тарифа с поддержкой html тегов: h1, p, strong, img, a
       name:
         type: "string"
         description: "Название тарифа"
@@ -918,8 +1009,6 @@ definitions:
   ZoneSetEntity:
     type: "object"
     properties:
-      id:
-        description: "ID набора зон"
       availableForDriving:
         type: "object"
         description: "Геозона (полигон в формате GeoJSON) поездки - зона, в рамках которой можно совершать поездку"
@@ -937,9 +1026,9 @@ definitions:
   ZoneEntity:
     type: "object"
     properties:
-      polyline:
+      geojson:
         type: "object"
-        description: "Геозона (полигон в формате GeoJSON)"
+        description: "Геозона в формате GeoJSON"
       shortDescription:
         type: "string"
         example: "Если поездка выйдет дешевле 1170Р, с карты дополнительно спишется недостающая разница"
@@ -955,38 +1044,42 @@ definitions:
 
   LocationDto:
     type: "object"
+    required:
+      - lat
+      - lon
     properties:
       lat:
         type: "number"
-        required: true
         description: "Широта"
         example: 55.747534
       lon:
         type: "number"
-        required: true
         description: "Долгота"
         example: 37.626030
 
   LocationEntity:
     type: "object"
+    required:
+      - lat
+      - lon
     properties:
       address:
         type: "string"
-        required: true
         example: "Москва, ул. Тверская, д. 13"
+        description: "Адрес, по которому находится автомобиль. Может быть null - в этом случае адрес автомобиля будет отображаться по результату работы геокодера МТ."
       lat:
         type: "number"
-        required: true
         description: "Широта"
         example: 55.747534
       lon:
         type: "number"
-        required: true
         description: "Долгота"
         example: 37.626030
 
   ErrorRideCreationEntity:
     type: "object"
+    required:
+      - errorCode
     properties:
       deepLink:
         type: "string"
@@ -1028,6 +1121,8 @@ definitions:
 
   ErrorTokenCreationEntity:
     type: "object"
+    required:
+      - errorCode
     properties:
       deepLink:
         type: "string"
@@ -1059,6 +1154,8 @@ definitions:
 
   ErrorRideCancelEntity:
     type: "object"
+    required:
+      - errorCode
     properties:
       message:
         type: "string"

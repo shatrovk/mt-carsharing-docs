@@ -1,7 +1,7 @@
 {
   "swagger" : "2.0",
   "info" : {
-    "description" : "<p>Документ описывает интеграцию серверной части приложения Московский Транспорт (МТ) и сервисом каршеринга.</p>\n<p>Данный API предстоит реализовать сервису каршеринга.</p>\n<p>Доступ к API каршеринга должен быть ограничен списком разрешённых IP адресов МТ.</p>\n<p>Доступ к API на стороне МТ будет ограничен списком IP адресов каршеринг сервисов, а также уникальным API ключом для каждого каршеринга. Данный API ключ необходимо передавать в HTTP заголовке Api-Key.</p>\n<p>Для работы с API каршеринга, МТ должен получить API токен для каждого пользователя (см. ниже метод POST /token). Токен передаётся в каждый метод в HTTP заголовке User-Token.</p>\n<h2>&#9888; Вопросы на проработку</h2>\n<p>\n  <ol>\n  <li>Согласовать список возможных причин, по которым пользователь не может забронировать текущий автомобиль (поле forbiddenRentReason)</li>\n  <li>Требуется согласовать список возможных ошибок с операторами при брони автомобиля (ErrorRideCreationEntity)</li>\n</ol>\n</p>\n",
+    "description" : "<p>Документ описывает интеграцию серверной части приложения Московский Транспорт (МТ) и сервисом каршеринга.</p>\n<p>Данный API предстоит реализовать сервису каршеринга.</p>\n<p>Доступ к API каршеринга должен быть ограничен списком разрешённых IP адресов МТ.</p>\n<p>Доступ к API на стороне МТ будет ограничен списком IP адресов каршеринг сервисов, а также уникальным API ключом для каждого каршеринга. Данный API ключ необходимо передавать в HTTP заголовке Api-Key.</p>\n<p>Для работы с API каршеринга, МТ должен получить API токен для каждого пользователя (см. ниже метод POST /token). Токен передаётся в каждый метод в HTTP заголовке User-Token.</p>\n",
     "title" : "MT + сервисы каршеринга"
   },
   "tags" : [ {
@@ -57,7 +57,7 @@
       "get" : {
         "tags" : [ "carsharing" ],
         "summary" : "Получение текста политики конфиденциальности и правил сервиса",
-        "description" : "<p>Метод возвращает текст правил и политики конфиденциальности сервиса, которые пользователь должен принять при работе с сервисом.</p>\n<p>Предусмотрен параметр updatedAt, в котором необходимо передавать дату последнего обновления текста. Данное поле необходимо, чтобы получить повторное согласие пользователя в случае обновления правил.</p>\n",
+        "description" : "<p>Метод возвращает текст правил и политики конфиденциальности сервиса, которые пользователь должен принять при работе с сервисом.</p>\n<p>Предусмотрен параметр version, в котором необходимо передавать дату последнего обновления текста. Данное поле необходимо, чтобы получить повторное согласие пользователя в случае обновления правил.</p>\n<p>В качестве версии оферты можно передавать уникальное строковое значение, которое будет сравниваться с предыдущим значением, которое было получено и сохранено в МТ.\nНапример, таким значением может выступать версия оферты (v1, v2 и тд) или дата обновления оферты на стороне оператора.</p>\n",
         "operationId" : "policyGet",
         "consumes" : [ "application/json" ],
         "produces" : [ "application/json" ],
@@ -143,7 +143,7 @@
           "200" : {
             "description" : "Успех операции",
             "schema" : {
-              "$ref" : "#/definitions/ActiveRideEntity"
+              "$ref" : "#/definitions/ActiveRideInfoEntity"
             }
           },
           "401" : {
@@ -181,7 +181,7 @@
           "200" : {
             "description" : "Успех операции",
             "schema" : {
-              "$ref" : "#/definitions/RideEntity"
+              "$ref" : "#/definitions/RideCreatedEntity"
             }
           },
           "400" : {
@@ -278,7 +278,7 @@
             }
           },
           "400" : {
-            "description" : "Ошибка при бронировании",
+            "description" : "Ошибка при отмене брони",
             "schema" : {
               "$ref" : "#/definitions/ErrorRideCancelEntity"
             }
@@ -426,15 +426,21 @@
   "definitions" : {
     "TokenDto" : {
       "type" : "object",
+      "required" : [ "phoneNum" ],
       "properties" : {
         "phoneNum" : {
           "type" : "integer",
           "description" : "Номер телефона в формате <i>70000000000</i> (только цифры)"
+        },
+        "birthday" : {
+          "type" : "string",
+          "description" : "Дата рождения пользователя в формате YYYY-MM-DD. Актуально для некоторых операторов, у которых при выдаче токена необходимо сверять дату рождения пользователя."
         }
       }
     },
     "RideDto" : {
       "type" : "object",
+      "required" : [ "carId", "offerId", "policyVersion", "userLocation" ],
       "properties" : {
         "carId" : {
           "type" : "string",
@@ -456,6 +462,7 @@
     },
     "RideCancelRequestDto" : {
       "type" : "object",
+      "required" : [ "userLocation" ],
       "properties" : {
         "userLocation" : {
           "$ref" : "#/definitions/LocationDto"
@@ -465,27 +472,85 @@
     "RideCancelConfirmDto" : {
       "type" : "object",
       "properties" : {
-        "id" : {
+        "confirmationRequestId" : {
           "type" : "string",
-          "description" : "ID запроса на отмену, который получен из метода /ride/{id}/cancel/request"
+          "description" : "ID запроса на отмену, который получен из метода /ride/{id}/cancel/request. Поле может быть null (см. описание метода /ride/{id}/cancel-request)"
         }
       }
     },
-    "ActiveRideEntity" : {
+    "ActiveRideInfoEntity" : {
       "type" : "object",
+      "required" : [ "deepLink", "status" ],
       "properties" : {
         "status" : {
           "type" : "string",
           "description" : "",
-          "enum" : [ "active", "notFound", "serviceRide" ]
+          "enum" : [ "active", "serviceRide" ]
         },
         "ride" : {
           "description" : "Сущность активной поездки пользователя. Может быть null во всех случаях, кроме случая активной поездки, которая создана пользователем через МТ.",
-          "$ref" : "#/definitions/RideEntity"
+          "$ref" : "#/definitions/RideActiveEntity"
         },
         "deepLink" : {
           "type" : "string",
           "description" : "Диплинк для перехода в приложение оператора каршеринга. Заполняется в случае, если у пользователя есть активная поездка, которая создана на стороне оператора."
+        }
+      }
+    },
+    "RideActiveEntity" : {
+      "type" : "object",
+      "required" : [ "car", "createdAt", "deepLink", "drivingInfo", "id", "inspectionInfo", "offer", "pointStart", "startedAt", "status", "waitingInfo" ],
+      "properties" : {
+        "id" : {
+          "type" : "string",
+          "description" : "ID поездки"
+        },
+        "deepLink" : {
+          "type" : "string",
+          "description" : "Диплинк для перехода в приложение оператора каршеринга"
+        },
+        "specialMessage" : {
+          "type" : "string",
+          "description" : "Сообщение, которое можно вывести в карточке автомобиля (при необходимости). Текст сообщения следует сформировать исходя из языковых настроек пользователя."
+        },
+        "car" : {
+          "description" : "Информация об автомобиле",
+          "$ref" : "#/definitions/RideCarEntity"
+        },
+        "offer" : {
+          "description" : "Информация о используемом тарифе в рамках этой брони",
+          "$ref" : "#/definitions/OfferRangeEntity"
+        },
+        "waitingInfo" : {
+          "description" : "Информация о времени ожидания",
+          "$ref" : "#/definitions/RideWaitingInfoEntity"
+        },
+        "inspectionInfo" : {
+          "description" : "Информация об инспектировании автомобиля",
+          "$ref" : "#/definitions/RideInspectionInfoEntity"
+        },
+        "drivingInfo" : {
+          "description" : "Информация о времени ожидания",
+          "$ref" : "#/definitions/RideDriveInfoEntity"
+        },
+        "pointStart" : {
+          "description" : "Точка старта поездки (откуда поездка была начата - по сути является точкой автомобиля при брони)",
+          "$ref" : "#/definitions/LocationEntity"
+        },
+        "createdAt" : {
+          "type" : "integer",
+          "example" : 1637917148,
+          "description" : "Время создания брони в формате timestamp (секунды)"
+        },
+        "startedAt" : {
+          "type" : "integer",
+          "example" : 1637917148,
+          "description" : "Время старта поездки (пользователь осмотрел автомобиль и начал аренду) в формате timestamp (секунды). Может быть null, если аренда ещё не начата."
+        },
+        "status" : {
+          "type" : "string",
+          "description" : "Статус поездки",
+          "enum" : [ "active", "parking", "canceling", "inspection" ]
         }
       }
     },
@@ -503,9 +568,6 @@
         "specialMessage" : {
           "type" : "string",
           "description" : "Сообщение, которое можно вывести в карточке автомобиля (при необходимости). Текст сообщения следует сформировать исходя из языковых настроек пользователя."
-        },
-        "finesDescription" : {
-          "type" : "string"
         },
         "car" : {
           "description" : "Информация об автомобиле",
@@ -532,7 +594,7 @@
           "$ref" : "#/definitions/LocationEntity"
         },
         "pointFinish" : {
-          "description" : "Точка завершения поездки",
+          "description" : "Точка завершения поездки. Может быть null, если поездка ещё не завершена.",
           "$ref" : "#/definitions/LocationEntity"
         },
         "createdAt" : {
@@ -564,6 +626,7 @@
     },
     "RideCreatedEntity" : {
       "type" : "object",
+      "required" : [ "car", "createdAt", "deepLink", "id", "inspection", "offer", "pointStart", "status", "waiting" ],
       "properties" : {
         "id" : {
           "type" : "string",
@@ -595,10 +658,6 @@
         },
         "pointStart" : {
           "description" : "Точка старта поездки (откуда поездка была начата - по сути является точкой автомобиля при брони)",
-          "$ref" : "#/definitions/LocationEntity"
-        },
-        "pointFinish" : {
-          "description" : "Точка завершения поездки",
           "$ref" : "#/definitions/LocationEntity"
         },
         "createdAt" : {
@@ -660,7 +719,7 @@
       "properties" : {
         "id" : {
           "type" : "string",
-          "description" : "ID подтверждения отмены, который необходим отправить в метод /ride/{id}/cancel-confirm"
+          "description" : "<p>ID подтверждения отмены, который необходим отправить в метод /ride/{id}/cancel-confirm.</p>\n<p>\nПоле может быть null, если у оператора каршеринга нет необходимости о чём-то\nпредупредить пользователя при отмене брони. В этом случае будет вызван метод /ride/{id}/cancel-confirm с\nпустым полем confirmationRequestId в запросе.</p>\n"
         },
         "message" : {
           "type" : "string",
@@ -695,6 +754,7 @@
     },
     "RideCarEntity" : {
       "type" : "object",
+      "required" : [ "fuelCapacity", "model", "number", "position" ],
       "properties" : {
         "id" : {
           "type" : "string"
@@ -719,6 +779,7 @@
     },
     "TokenEntity" : {
       "type" : "object",
+      "required" : [ "token", "validUntil" ],
       "properties" : {
         "token" : {
           "type" : "string",
@@ -734,6 +795,7 @@
     },
     "PolicyEntity" : {
       "type" : "object",
+      "required" : [ "version" ],
       "properties" : {
         "content" : {
           "type" : "string",
@@ -747,6 +809,7 @@
     },
     "FuelCapacity" : {
       "type" : "object",
+      "required" : [ "type", "value" ],
       "properties" : {
         "value" : {
           "type" : "number",
@@ -761,6 +824,7 @@
     },
     "CarEntity" : {
       "type" : "object",
+      "required" : [ "carNum", "deepLink", "fuelCapacity", "id", "location", "model", "offer", "zones" ],
       "properties" : {
         "id" : {
           "type" : "string"
@@ -786,8 +850,8 @@
           "example" : "BMW 3-series",
           "description" : "Марка + модель автомобиля"
         },
-        "availableZoneSet" : {
-          "$ref" : "#/definitions/AvailableZoneSetEntity"
+        "zones" : {
+          "$ref" : "#/definitions/CarZonesEntity"
         },
         "location" : {
           "$ref" : "#/definitions/LocationEntity"
@@ -799,6 +863,10 @@
           "type" : "string",
           "description" : "Код причины, по которой пользователю может быть недоступен этот автомобиль.\nВ случае, если автомобиль доступен для текущего пользователя значение поля\nследует оставить в null (или пользователь неавторизован). Возможные коды ошибок:\n<i>lowDriverExperience</i> - низкий стаж вождения\n<i>lowServiceExperience</i> - низкий уровень доверия в сервисе оператора\n<i>carAlreadyBooked</i> - автомобиль уже забронирован другим пользователем\n<i>userDebt</i> - у пользователя есть задолженность перед сервисом каршеринга, необходим пройти в приложение оператора и погасить задолженность\n<i>other</i> - другие причины\n",
           "enum" : [ "lowDriverExperience", "lowServiceExperience", "carAlreadyBooked", "userDebt", "other" ]
+        },
+        "forbiddenRentReasonMessage" : {
+          "type" : "string",
+          "description" : "Сообщение, которое будет выводиться пользователю в случае, если он не может взять этот автомобиль в аренду.\nПоле следует передавать, в случае если forbiddenRentReason = other.\n"
         },
         "offer" : {
           "type" : "array",
@@ -817,17 +885,21 @@
         }
       }
     },
-    "AvailableZoneSetEntity" : {
+    "CarZonesEntity" : {
       "type" : "object",
       "properties" : {
-        "id" : {
-          "type" : "string",
-          "description" : "ID набора зон"
+        "zones" : {
+          "description" : "Доступные зоны для автомобиля можно передать в этом поле, если на стороне оператора они не объедены в сет.",
+          "$ref" : "#/definitions/ZoneSetEntity"
         },
-        "updatedAt" : {
+        "setId" : {
+          "type" : "string",
+          "description" : "ID набора зон. Может быть null, если функционал набора зон не зайдействова и доступные зоны для автомобиля передаются в поле zones"
+        },
+        "setUpdatedAt" : {
           "type" : "integer",
           "example" : 1637907497,
-          "description" : "Дата изменения набора данных в timestamp (секунды)"
+          "description" : "Дата изменения сета зон в timestamp (секунды)"
         }
       }
     },
@@ -840,7 +912,7 @@
         },
         "description" : {
           "type" : "string",
-          "description" : "Подробное описание тарифа с поддержкой html тегов: h1, p, strong, img\n"
+          "description" : "Подробное описание тарифа с поддержкой html тегов: h1, p, strong, img, a\n"
         },
         "name" : {
           "type" : "string",
@@ -906,9 +978,6 @@
     "ZoneSetEntity" : {
       "type" : "object",
       "properties" : {
-        "id" : {
-          "description" : "ID набора зон"
-        },
         "availableForDriving" : {
           "type" : "object",
           "description" : "Геозона (полигон в формате GeoJSON) поездки - зона, в рамках которой можно совершать поездку",
@@ -933,9 +1002,9 @@
     "ZoneEntity" : {
       "type" : "object",
       "properties" : {
-        "polyline" : {
+        "geojson" : {
           "type" : "object",
-          "description" : "Геозона (полигон в формате GeoJSON)",
+          "description" : "Геозона в формате GeoJSON",
           "properties" : { }
         },
         "shortDescription" : {
@@ -958,6 +1027,7 @@
     },
     "LocationDto" : {
       "type" : "object",
+      "required" : [ "lat", "lon" ],
       "properties" : {
         "lat" : {
           "type" : "number",
@@ -973,10 +1043,12 @@
     },
     "LocationEntity" : {
       "type" : "object",
+      "required" : [ "lat", "lon" ],
       "properties" : {
         "address" : {
           "type" : "string",
-          "example" : "Москва, ул. Тверская, д. 13"
+          "example" : "Москва, ул. Тверская, д. 13",
+          "description" : "Адрес, по которому находится автомобиль. Может быть null - в этом случае адрес автомобиля будет отображаться по результату работы геокодера МТ."
         },
         "lat" : {
           "type" : "number",
@@ -992,6 +1064,7 @@
     },
     "ErrorRideCreationEntity" : {
       "type" : "object",
+      "required" : [ "errorCode" ],
       "properties" : {
         "deepLink" : {
           "type" : "string",
@@ -1010,6 +1083,7 @@
     },
     "ErrorTokenCreationEntity" : {
       "type" : "object",
+      "required" : [ "errorCode" ],
       "properties" : {
         "deepLink" : {
           "type" : "string",
@@ -1028,6 +1102,7 @@
     },
     "ErrorRideCancelEntity" : {
       "type" : "object",
+      "required" : [ "errorCode" ],
       "properties" : {
         "message" : {
           "type" : "string",
