@@ -185,6 +185,8 @@ paths:
             $ref: "#/definitions/ActiveRideInfoEntity"
         "401":
           description: "Переданный токен невалиден"
+        "404":
+          description: "На данный момент у пользователя нет активных поездок"
       security:
         - userTokenSec: [ ]
 
@@ -840,7 +842,7 @@ definitions:
       content:
         type: "string"
         description: |
-          Текст правил сервиса и политики конфиденциальности: h1, p, strong, img
+          Текст правил сервиса и политики конфиденциальности: h1, p, strong, img, a
       version:
         type: "string"
         description: "Версия оферты"
@@ -1168,13 +1170,11 @@ definitions:
         description: |
           Код ошибки при бронировании автомобиля. Коды ошибок:
           <ul>
-            <li>rideNotFound - поездка с переданным ID не найдена;</li>
             <li>rideAlreadyCanceled - поездка с переданным ID уже отменена;</li>
             <li>rideInProgress - поездку нельзя отменить, т.к. поездка в данный момент активна</li>
-            <li>invalidRequestId - переданный ID отмены невалиден</li>
+            <li>invalidConfirmationRequestId - переданный ID отмены невалиден</li>
           </ul>
         enum:
-          - rideNotFound
           - rideAlreadyCanceled
           - rideInProgress
-          - invalidRequestId
+          - invalidConfirmationRequestId

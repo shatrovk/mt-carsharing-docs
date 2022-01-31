@@ -148,6 +148,9 @@
           },
           "401" : {
             "description" : "Переданный токен невалиден"
+          },
+          "404" : {
+            "description" : "На данный момент у пользователя нет активных поездок"
           }
         }
       },
@@ -799,7 +802,7 @@
       "properties" : {
         "content" : {
           "type" : "string",
-          "description" : "Текст правил сервиса и политики конфиденциальности: h1, p, strong, img\n"
+          "description" : "Текст правил сервиса и политики конфиденциальности: h1, p, strong, img, a\n"
         },
         "version" : {
           "type" : "string",
@@ -1110,8 +1113,8 @@
         },
         "errorCode" : {
           "type" : "string",
-          "description" : "Код ошибки при бронировании автомобиля. Коды ошибок:\n<ul>\n  <li>rideNotFound - поездка с переданным ID не найдена;</li>\n  <li>rideAlreadyCanceled - поездка с переданным ID уже отменена;</li>\n  <li>rideInProgress - поездку нельзя отменить, т.к. поездка в данный момент активна</li>\n  <li>invalidRequestId - переданный ID отмены невалиден</li>\n</ul>\n",
-          "enum" : [ "rideNotFound", "rideAlreadyCanceled", "rideInProgress", "invalidRequestId" ]
+          "description" : "Код ошибки при бронировании автомобиля. Коды ошибок:\n<ul>\n  <li>rideAlreadyCanceled - поездка с переданным ID уже отменена;</li>\n  <li>rideInProgress - поездку нельзя отменить, т.к. поездка в данный момент активна</li>\n  <li>invalidConfirmationRequestId - переданный ID отмены невалиден</li>\n</ul>\n",
+          "enum" : [ "rideAlreadyCanceled", "rideInProgress", "invalidConfirmationRequestId" ]
         }
       }
     }
