@@ -35,7 +35,19 @@
           "description" : "Выбранный язык пользователя в приложении МТ",
           "required" : true,
           "type" : "string",
-          "enum" : [ "ru", "en", "fr", "de", "es", "cn" ]
+          "enum" : [ "ru", "en" ]
+        }, {
+          "name" : "External-Auth-Token",
+          "in" : "header",
+          "description" : "Авторизационный токен из внешней системы авторизации",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "User-Location",
+          "in" : "header",
+          "description" : "Координаты пользователя в формате широта,долгота",
+          "required" : false,
+          "type" : "string"
         } ],
         "responses" : {
           "200" : {
@@ -67,7 +79,13 @@
           "description" : "Выбранный язык пользователя в приложении МТ",
           "required" : true,
           "type" : "string",
-          "enum" : [ "ru", "en", "fr", "de", "es", "cn" ]
+          "enum" : [ "ru", "en" ]
+        }, {
+          "name" : "User-Location",
+          "in" : "header",
+          "description" : "Координаты пользователя в формате широта,долгота",
+          "required" : false,
+          "type" : "string"
         } ],
         "security" : [ { }, {
           "userTokenSec" : [ ]
@@ -102,7 +120,13 @@
           "description" : "Выбранный язык пользователя в приложении МТ",
           "required" : true,
           "type" : "string",
-          "enum" : [ "ru", "en", "fr", "de", "es", "cn" ]
+          "enum" : [ "ru", "en" ]
+        }, {
+          "name" : "User-Location",
+          "in" : "header",
+          "description" : "Координаты пользователя в формате широта,долгота",
+          "required" : false,
+          "type" : "string"
         } ],
         "security" : [ { }, {
           "userTokenSec" : [ ]
@@ -134,7 +158,7 @@
           "description" : "Выбранный язык пользователя в приложении МТ",
           "required" : true,
           "type" : "string",
-          "enum" : [ "ru", "en", "fr", "de", "es", "cn" ]
+          "enum" : [ "ru", "en" ]
         } ],
         "security" : [ {
           "userTokenSec" : [ ]
@@ -175,7 +199,13 @@
           "description" : "Выбранный язык пользователя в приложении МТ",
           "required" : true,
           "type" : "string",
-          "enum" : [ "ru", "en", "fr", "de", "es", "cn" ]
+          "enum" : [ "ru", "en" ]
+        }, {
+          "name" : "User-Location",
+          "in" : "header",
+          "description" : "Координаты пользователя в формате широта,долгота",
+          "required" : false,
+          "type" : "string"
         } ],
         "security" : [ {
           "userTokenSec" : [ ]
@@ -219,7 +249,13 @@
           "description" : "Выбранный язык пользователя в приложении МТ",
           "required" : true,
           "type" : "string",
-          "enum" : [ "ru", "en", "fr", "de", "es", "cn" ]
+          "enum" : [ "ru", "en" ]
+        }, {
+          "name" : "User-Location",
+          "in" : "header",
+          "description" : "Координаты пользователя в формате широта,долгота",
+          "required" : false,
+          "type" : "string"
         } ],
         "security" : [ {
           "userTokenSec" : [ ]
@@ -268,7 +304,13 @@
           "description" : "Выбранный язык пользователя в приложении МТ",
           "required" : true,
           "type" : "string",
-          "enum" : [ "ru", "en", "fr", "de", "es", "cn" ]
+          "enum" : [ "ru", "en" ]
+        }, {
+          "name" : "User-Location",
+          "in" : "header",
+          "description" : "Координаты пользователя в формате широта,долгота",
+          "required" : false,
+          "type" : "string"
         } ],
         "security" : [ {
           "userTokenSec" : [ ]
@@ -323,7 +365,13 @@
           "description" : "Выбранный язык пользователя в приложении МТ",
           "required" : true,
           "type" : "string",
-          "enum" : [ "ru", "en", "fr", "de", "es", "cn" ]
+          "enum" : [ "ru", "en" ]
+        }, {
+          "name" : "User-Location",
+          "in" : "header",
+          "description" : "Координаты пользователя в формате широта,долгота",
+          "required" : false,
+          "type" : "string"
         } ],
         "security" : [ {
           "userTokenSec" : [ ]
@@ -370,7 +418,13 @@
           "description" : "Выбранный язык пользователя в приложении МТ",
           "required" : true,
           "type" : "string",
-          "enum" : [ "ru", "en", "fr", "de", "es", "cn" ]
+          "enum" : [ "ru", "en" ]
+        }, {
+          "name" : "User-Location",
+          "in" : "header",
+          "description" : "Координаты пользователя в формате широта,долгота",
+          "required" : false,
+          "type" : "string"
         } ],
         "security" : [ {
           "userTokenSec" : [ ]
@@ -410,7 +464,7 @@
           "description" : "Выбранный язык пользователя в приложении МТ",
           "required" : true,
           "type" : "string",
-          "enum" : [ "ru", "en", "fr", "de", "es", "cn" ]
+          "enum" : [ "ru", "en" ]
         } ],
         "deprecated" : true,
         "responses" : {
@@ -434,10 +488,6 @@
       "type" : "object",
       "required" : [ "phoneNum" ],
       "properties" : {
-        "externalAuthToken" : {
-          "type" : "string",
-          "description" : "Токен из внешней системы авторизации оператора каршеринга"
-        },
         "phoneNum" : {
           "type" : "integer",
           "description" : "Номер телефона в формате <i>70000000000</i> (только цифры)"
@@ -647,7 +697,7 @@
         "status" : {
           "type" : "string",
           "description" : "Статус поездки",
-          "enum" : [ "active", "parking", "finished", "canceling", "canceled", "inspection" ]
+          "enum" : [ "booking", "active", "parking", "finished", "canceling", "canceled", "inspection" ]
         }
       }
     },

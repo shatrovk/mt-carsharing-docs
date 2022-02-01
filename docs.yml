@@ -46,6 +46,16 @@ paths:
           enum:
             - ru
             - en
+        - name: External-Auth-Token
+          in: header
+          description: Авторизационный токен из внешней системы авторизации
+          required: false
+          type: string
+        - name: User-Location
+          in: header
+          description: Координаты пользователя в формате широта,долгота
+          required: false
+          type: string
       responses:
         "200":
           description: "Успех операции"
@@ -76,6 +86,11 @@ paths:
           enum:
             - ru
             - en
+        - name: User-Location
+          in: header
+          description: Координаты пользователя в формате широта,долгота
+          required: false
+          type: string
       consumes:
         - "application/json"
       produces:
@@ -117,6 +132,11 @@ paths:
           enum:
             - ru
             - en
+        - name: User-Location
+          in: header
+          description: Координаты пользователя в формате широта,долгота
+          required: false
+          type: string
       consumes:
         - "application/json"
       produces:
@@ -202,6 +222,11 @@ paths:
           enum:
             - ru
             - en
+        - name: User-Location
+          in: header
+          description: Координаты пользователя в формате широта,долгота
+          required: false
+          type: string
       responses:
         "200":
           description: "Успех операции"
@@ -241,6 +266,11 @@ paths:
           enum:
             - ru
             - en
+        - name: User-Location
+          in: header
+          description: Координаты пользователя в формате широта,долгота
+          required: false
+          type: string
       responses:
         "200":
           description: "Успех операции"
@@ -286,6 +316,11 @@ paths:
           enum:
             - ru
             - en
+        - name: User-Location
+          in: header
+          description: Координаты пользователя в формате широта,долгота
+          required: false
+          type: string
       responses:
         "200":
           description: "Успех операции"
@@ -344,6 +379,11 @@ paths:
           enum:
             - ru
             - en
+        - name: User-Location
+          in: header
+          description: Координаты пользователя в формате широта,долгота
+          required: false
+          type: string
       responses:
         "200":
           description: "Успех операции"
@@ -388,6 +428,11 @@ paths:
           enum:
             - ru
             - en
+        - name: User-Location
+          in: header
+          description: Координаты пользователя в формате широта,долгота
+          required: false
+          type: string
       responses:
         "200":
           description: "Набор зон"
@@ -454,9 +499,6 @@ definitions:
     required:
       - phoneNum
     properties:
-      externalAuthToken:
-        type: "string"
-        description: "Токен из внешней системы авторизации оператора каршеринга"
       phoneNum:
         type: "integer"
         description: "Номер телефона в формате <i>70000000000</i> (только цифры)"
