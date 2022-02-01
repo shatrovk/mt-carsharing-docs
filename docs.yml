@@ -46,10 +46,6 @@ paths:
           enum:
             - ru
             - en
-            - fr
-            - de
-            - es
-            - cn
       responses:
         "200":
           description: "Успех операции"
@@ -80,10 +76,6 @@ paths:
           enum:
             - ru
             - en
-            - fr
-            - de
-            - es
-            - cn
       consumes:
         - "application/json"
       produces:
@@ -125,10 +117,6 @@ paths:
           enum:
             - ru
             - en
-            - fr
-            - de
-            - es
-            - cn
       consumes:
         - "application/json"
       produces:
@@ -174,10 +162,6 @@ paths:
           enum:
             - ru
             - en
-            - fr
-            - de
-            - es
-            - cn
       responses:
         "200":
           description: "Успех операции"
@@ -218,10 +202,6 @@ paths:
           enum:
             - ru
             - en
-            - fr
-            - de
-            - es
-            - cn
       responses:
         "200":
           description: "Успех операции"
@@ -261,10 +241,6 @@ paths:
           enum:
             - ru
             - en
-            - fr
-            - de
-            - es
-            - cn
       responses:
         "200":
           description: "Успех операции"
@@ -310,10 +286,6 @@ paths:
           enum:
             - ru
             - en
-            - fr
-            - de
-            - es
-            - cn
       responses:
         "200":
           description: "Успех операции"
@@ -325,6 +297,8 @@ paths:
             $ref: "#/definitions/ErrorRideCancelEntity"
         "401":
           description: "Переданный токен невалиден"
+        "405":
+          description: "Данный метод не реализован на стороне оператора. В этом случае следом за этим методом будет вызван метод /ride/{id}/cancel-confirm без передачи confirmationRequestId"
       security:
         - userTokenSec: [ ]
 
@@ -370,10 +344,6 @@ paths:
           enum:
             - ru
             - en
-            - fr
-            - de
-            - es
-            - cn
       responses:
         "200":
           description: "Успех операции"
@@ -418,10 +388,6 @@ paths:
           enum:
             - ru
             - en
-            - fr
-            - de
-            - es
-            - cn
       responses:
         "200":
           description: "Набор зон"
@@ -471,10 +437,6 @@ paths:
           enum:
             - ru
             - en
-            - fr
-            - de
-            - es
-            - cn
       responses:
         "200":
           description: "Успех операции"
@@ -492,6 +454,9 @@ definitions:
     required:
       - phoneNum
     properties:
+      externalAuthToken:
+        type: "string"
+        description: "Токен из внешней системы авторизации оператора каршеринга"
       phoneNum:
         type: "integer"
         description: "Номер телефона в формате <i>70000000000</i> (только цифры)"
@@ -564,6 +529,7 @@ definitions:
       - waitingInfo
       - inspectionInfo
       - drivingInfo
+      - summaryInfo
       - pointStart
       - createdAt
       - startedAt
@@ -593,6 +559,12 @@ definitions:
       drivingInfo:
         description: "Информация о времени ожидания"
         $ref: "#/definitions/RideDriveInfoEntity"
+      parkingInfo:
+        description: "Информация о времени ожидания"
+        $ref: "#/definitions/RideParkingInfoEntity"
+      summaryInfo:
+        description: "Общая информация о поездке"
+        $ref: "#/definitions/RideSummaryInfoEntity"
       pointStart:
         description: "Точка старта поездки (откуда поездка была начата - по сути является точкой автомобиля при брони)"
         $ref: "#/definitions/LocationEntity"
@@ -615,6 +587,18 @@ definitions:
 
   RideEntity:
     type: "object"
+    required:
+      - id
+      - deepLink
+      - car
+      - offer
+      - waitingInfo
+      - inspectionInfo
+      - drivingInfo
+      - summaryInfo
+      - pointStart
+      - createdAt
+      - status
     properties:
       id:
         description: "ID поездки"
@@ -640,6 +624,12 @@ definitions:
       drivingInfo:
         description: "Информация о времени ожидания"
         $ref: "#/definitions/RideDriveInfoEntity"
+      parkingInfo:
+        description: "Информация о времени ожидания"
+        $ref: "#/definitions/RideParkingInfoEntity"
+      summaryInfo:
+        description: "Общая информация о поездке"
+        $ref: "#/definitions/RideSummaryInfoEntity"
       pointStart:
         description: "Точка старта поездки (откуда поездка была начата - по сути является точкой автомобиля при брони)"
         $ref: "#/definitions/LocationEntity"
@@ -666,6 +656,7 @@ definitions:
         type: "string"
         description: "Статус поездки"
         enum:
+          - booking
           - active
           - parking
           - finished
@@ -680,11 +671,10 @@ definitions:
       - deepLink
       - car
       - offer
-      - waiting
-      - inspection
+      - waitingInfo
+      - inspectionInfo
       - pointStart
       - createdAt
-      - status
     properties:
       id:
         description: "ID поездки"
@@ -701,10 +691,10 @@ definitions:
       offer:
         description: "Информация о используемом тарифе в рамках этой брони"
         $ref: "#/definitions/OfferRangeEntity"
-      waiting:
+      waitingInfo:
         description: "Информация о времени ожидания"
         $ref: "#/definitions/RideWaitingInfoEntity"
-      inspection:
+      inspectionInfo:
         description: "Информация об инспектировании автомобиля"
         $ref: "#/definitions/RideInspectionInfoEntity"
       pointStart:
@@ -714,15 +704,6 @@ definitions:
         type: "integer"
         description: "Время создания брони в формате timestamp (секунды)"
         example: 1637917148
-      status:
-        type: "string"
-        description: "Статус поездки"
-        enum:
-          - active
-          - parking
-          - finished
-          - canceled
-          - inspection
 
   RideWaitingInfoEntity:
     type: "object"
@@ -757,6 +738,18 @@ definitions:
         description: "Итоговая стоимость за инспектирование автомобиля (в копейках)"
         example: 799
 
+  RideSummaryInfoEntity:
+    type: "object"
+    properties:
+      totalDuration:
+        type: "integer"
+        description: "Итоговая длительность поездки (в секундах)"
+        example: 799
+      totalPrice:
+        type: "integer"
+        description: "Итоговая стоимость за поездку (в копейках)"
+        example: 799
+
   RideCancelConfirmEntity:
     type: "object"
     properties:
@@ -774,6 +767,8 @@ definitions:
 
   RideDriveInfoEntity:
     type: "object"
+    required:
+      - distance
     properties:
       status:
         description: "Статус расчёта стоимости. Если стоимость поездки не окончательная и требуется время для точного расчёта - в поле следует передать значение calculation. В случае если стоимость поездки расчитана в окончательном вариенте, значение поля - calculated."
@@ -792,6 +787,18 @@ definitions:
       totalPrice:
         type: "integer"
         description: "Итоговая стоимость за поездку на автомобиле (в копейках)"
+        example: 799
+
+  RideParkingInfoEntity:
+    type: "object"
+    properties:
+      totalDuration:
+        type: "integer"
+        description: "Общая длительность парковки (значение в секундах)"
+        example: 180
+      totalPrice:
+        type: "integer"
+        description: "Итоговая стоимость за парковку автомобиля (в копейках)"
         example: 799
 
   RideCarEntity:
@@ -886,19 +893,15 @@ definitions:
         type: "string"
         description: "Гос. номер автомобиля"
         example: "у522уу799"
-      prePaymentInformation:
-        type: "string"
-        description: "Информация для пользователя о списания за поездку. Здесь можно передать информацию о бонусном списании или другую вспомогательную информации об оплате за поездку на этом автомобиле."
       model:
         type: "string"
         description: "Марка + модель автомобиля"
         example: "BMW 3-series"
       zones:
+        type: "object"
         $ref: "#/definitions/CarZonesEntity"
       location:
         $ref: "#/definitions/LocationEntity"
-      insurancePolicy:
-        $ref: "#/definitions/CarInsurancePolicyEntity"
       forbiddenRentReason:
         type: "string"
         description: |
@@ -935,11 +938,17 @@ definitions:
 
   CarZonesEntity:
     type: object
+    allOf:
+      - $ref: '#/definitions/ZoneSetEntity'
     properties:
-      zones:
-        type: "object"
-        description: "Доступные зоны для автомобиля можно передать в этом поле, если на стороне оператора они не объедены в сет."
-        $ref: "#/definitions/ZoneSetEntity"
+      sets:
+        type: "array"
+        items:
+          $ref: "#/definitions/CarZonesSetEntity"
+
+  CarZonesSetEntity:
+    type: object
+    properties:
       setId:
         type: "string"
         description: "ID набора зон. Может быть null, если функционал набора зон не зайдействова и доступные зоны для автомобиля передаются в поле zones"
@@ -958,10 +967,15 @@ definitions:
       id:
         description: "ID предложения цены за аренду. ID будет использован при бронировании автомобиля. Может быть null, в случае если пользователь неавторизон."
         type: "string"
+      insurancePolicy:
+        $ref: "#/definitions/CarInsurancePolicyEntity"
       description:
         type: string
         description: |
           Подробное описание тарифа с поддержкой html тегов: h1, p, strong, img, a
+      prePaymentInformation:
+        type: "string"
+        description: "Информация для пользователя о списания за поездку. Здесь можно передать информацию о бонусном списании или другую вспомогательную информации об оплате за поездку на этом автомобиле. Есть поддержка HTML тегов strong, p, u, i, a"
       name:
         type: "string"
         description: "Название тарифа"
@@ -1171,10 +1185,10 @@ definitions:
           Код ошибки при бронировании автомобиля. Коды ошибок:
           <ul>
             <li>rideAlreadyCanceled - поездка с переданным ID уже отменена;</li>
-            <li>rideInProgress - поездку нельзя отменить, т.к. поездка в данный момент активна</li>
+            <li>rideIsActive - поездку нельзя отменить, т.к. поездка в данный момент активна</li>
             <li>invalidConfirmationRequestId - переданный ID отмены невалиден</li>
           </ul>
         enum:
           - rideAlreadyCanceled
-          - rideInProgress
+          - rideIsActive
           - invalidConfirmationRequestId

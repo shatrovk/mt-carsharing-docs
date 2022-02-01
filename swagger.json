@@ -288,6 +288,9 @@
           },
           "401" : {
             "description" : "Переданный токен невалиден"
+          },
+          "405" : {
+            "description" : "Данный метод не реализован на стороне оператора. В этом случае следом за этим методом будет вызван метод /ride/{id}/cancel-confirm без передачи confirmationRequestId"
           }
         }
       }
@@ -431,6 +434,10 @@
       "type" : "object",
       "required" : [ "phoneNum" ],
       "properties" : {
+        "externalAuthToken" : {
+          "type" : "string",
+          "description" : "Токен из внешней системы авторизации оператора каршеринга"
+        },
         "phoneNum" : {
           "type" : "integer",
           "description" : "Номер телефона в формате <i>70000000000</i> (только цифры)"
@@ -502,7 +509,7 @@
     },
     "RideActiveEntity" : {
       "type" : "object",
-      "required" : [ "car", "createdAt", "deepLink", "drivingInfo", "id", "inspectionInfo", "offer", "pointStart", "startedAt", "status", "waitingInfo" ],
+      "required" : [ "car", "createdAt", "deepLink", "drivingInfo", "id", "inspectionInfo", "offer", "pointStart", "startedAt", "status", "summaryInfo", "waitingInfo" ],
       "properties" : {
         "id" : {
           "type" : "string",
@@ -535,6 +542,14 @@
         "drivingInfo" : {
           "description" : "Информация о времени ожидания",
           "$ref" : "#/definitions/RideDriveInfoEntity"
+        },
+        "parkingInfo" : {
+          "description" : "Информация о времени ожидания",
+          "$ref" : "#/definitions/RideParkingInfoEntity"
+        },
+        "summaryInfo" : {
+          "description" : "Общая информация о поездке",
+          "$ref" : "#/definitions/RideSummaryInfoEntity"
         },
         "pointStart" : {
           "description" : "Точка старта поездки (откуда поездка была начата - по сути является точкой автомобиля при брони)",
@@ -559,6 +574,7 @@
     },
     "RideEntity" : {
       "type" : "object",
+      "required" : [ "car", "createdAt", "deepLink", "drivingInfo", "id", "inspectionInfo", "offer", "pointStart", "status", "summaryInfo", "waitingInfo" ],
       "properties" : {
         "id" : {
           "type" : "string",
@@ -591,6 +607,14 @@
         "drivingInfo" : {
           "description" : "Информация о времени ожидания",
           "$ref" : "#/definitions/RideDriveInfoEntity"
+        },
+        "parkingInfo" : {
+          "description" : "Информация о времени ожидания",
+          "$ref" : "#/definitions/RideParkingInfoEntity"
+        },
+        "summaryInfo" : {
+          "description" : "Общая информация о поездке",
+          "$ref" : "#/definitions/RideSummaryInfoEntity"
         },
         "pointStart" : {
           "description" : "Точка старта поездки (откуда поездка была начата - по сути является точкой автомобиля при брони)",
@@ -629,7 +653,7 @@
     },
     "RideCreatedEntity" : {
       "type" : "object",
-      "required" : [ "car", "createdAt", "deepLink", "id", "inspection", "offer", "pointStart", "status", "waiting" ],
+      "required" : [ "car", "createdAt", "deepLink", "id", "inspectionInfo", "offer", "pointStart", "waitingInfo" ],
       "properties" : {
         "id" : {
           "type" : "string",
@@ -651,11 +675,11 @@
           "description" : "Информация о используемом тарифе в рамках этой брони",
           "$ref" : "#/definitions/OfferRangeEntity"
         },
-        "waiting" : {
+        "waitingInfo" : {
           "description" : "Информация о времени ожидания",
           "$ref" : "#/definitions/RideWaitingInfoEntity"
         },
-        "inspection" : {
+        "inspectionInfo" : {
           "description" : "Информация об инспектировании автомобиля",
           "$ref" : "#/definitions/RideInspectionInfoEntity"
         },
@@ -667,11 +691,6 @@
           "type" : "integer",
           "example" : 1637917148,
           "description" : "Время создания брони в формате timestamp (секунды)"
-        },
-        "status" : {
-          "type" : "string",
-          "description" : "Статус поездки",
-          "enum" : [ "active", "parking", "finished", "canceled", "inspection" ]
         }
       }
     },
@@ -717,6 +736,21 @@
         }
       }
     },
+    "RideSummaryInfoEntity" : {
+      "type" : "object",
+      "properties" : {
+        "totalDuration" : {
+          "type" : "integer",
+          "example" : 799,
+          "description" : "Итоговая длительность поездки (в секундах)"
+        },
+        "totalPrice" : {
+          "type" : "integer",
+          "example" : 799,
+          "description" : "Итоговая стоимость за поездку (в копейках)"
+        }
+      }
+    },
     "RideCancelConfirmEntity" : {
       "type" : "object",
       "properties" : {
@@ -732,6 +766,7 @@
     },
     "RideDriveInfoEntity" : {
       "type" : "object",
+      "required" : [ "distance" ],
       "properties" : {
         "status" : {
           "type" : "string",
@@ -752,6 +787,21 @@
           "type" : "integer",
           "example" : 799,
           "description" : "Итоговая стоимость за поездку на автомобиле (в копейках)"
+        }
+      }
+    },
+    "RideParkingInfoEntity" : {
+      "type" : "object",
+      "properties" : {
+        "totalDuration" : {
+          "type" : "integer",
+          "example" : 180,
+          "description" : "Общая длительность парковки (значение в секундах)"
+        },
+        "totalPrice" : {
+          "type" : "integer",
+          "example" : 799,
+          "description" : "Итоговая стоимость за парковку автомобиля (в копейках)"
         }
       }
     },
@@ -844,10 +894,6 @@
           "example" : "у522уу799",
           "description" : "Гос. номер автомобиля"
         },
-        "prePaymentInformation" : {
-          "type" : "string",
-          "description" : "Информация для пользователя о списания за поездку. Здесь можно передать информацию о бонусном списании или другую вспомогательную информации об оплате за поездку на этом автомобиле."
-        },
         "model" : {
           "type" : "string",
           "example" : "BMW 3-series",
@@ -858,9 +904,6 @@
         },
         "location" : {
           "$ref" : "#/definitions/LocationEntity"
-        },
-        "insurancePolicy" : {
-          "$ref" : "#/definitions/CarInsurancePolicyEntity"
         },
         "forbiddenRentReason" : {
           "type" : "string",
@@ -889,12 +932,21 @@
       }
     },
     "CarZonesEntity" : {
+      "properties" : {
+        "sets" : {
+          "type" : "array",
+          "items" : {
+            "$ref" : "#/definitions/CarZonesSetEntity"
+          }
+        }
+      },
+      "allOf" : [ {
+        "$ref" : "#/definitions/ZoneSetEntity"
+      }, { } ]
+    },
+    "CarZonesSetEntity" : {
       "type" : "object",
       "properties" : {
-        "zones" : {
-          "description" : "Доступные зоны для автомобиля можно передать в этом поле, если на стороне оператора они не объедены в сет.",
-          "$ref" : "#/definitions/ZoneSetEntity"
-        },
         "setId" : {
           "type" : "string",
           "description" : "ID набора зон. Может быть null, если функционал набора зон не зайдействова и доступные зоны для автомобиля передаются в поле zones"
@@ -913,9 +965,16 @@
           "type" : "string",
           "description" : "ID предложения цены за аренду. ID будет использован при бронировании автомобиля. Может быть null, в случае если пользователь неавторизон."
         },
+        "insurancePolicy" : {
+          "$ref" : "#/definitions/CarInsurancePolicyEntity"
+        },
         "description" : {
           "type" : "string",
           "description" : "Подробное описание тарифа с поддержкой html тегов: h1, p, strong, img, a\n"
+        },
+        "prePaymentInformation" : {
+          "type" : "string",
+          "description" : "Информация для пользователя о списания за поездку. Здесь можно передать информацию о бонусном списании или другую вспомогательную информации об оплате за поездку на этом автомобиле. Есть поддержка HTML тегов strong, p, u, i, a"
         },
         "name" : {
           "type" : "string",
@@ -1113,8 +1172,8 @@
         },
         "errorCode" : {
           "type" : "string",
-          "description" : "Код ошибки при бронировании автомобиля. Коды ошибок:\n<ul>\n  <li>rideAlreadyCanceled - поездка с переданным ID уже отменена;</li>\n  <li>rideInProgress - поездку нельзя отменить, т.к. поездка в данный момент активна</li>\n  <li>invalidConfirmationRequestId - переданный ID отмены невалиден</li>\n</ul>\n",
-          "enum" : [ "rideAlreadyCanceled", "rideInProgress", "invalidConfirmationRequestId" ]
+          "description" : "Код ошибки при бронировании автомобиля. Коды ошибок:\n<ul>\n  <li>rideAlreadyCanceled - поездка с переданным ID уже отменена;</li>\n  <li>rideIsActive - поездку нельзя отменить, т.к. поездка в данный момент активна</li>\n  <li>invalidConfirmationRequestId - переданный ID отмены невалиден</li>\n</ul>\n",
+          "enum" : [ "rideAlreadyCanceled", "rideIsActive", "invalidConfirmationRequestId" ]
         }
       }
     }
