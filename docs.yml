@@ -516,7 +516,6 @@ definitions:
     type: "object"
     required:
       - status
-      - deepLink
     properties:
       status:
         description: ""
@@ -529,7 +528,7 @@ definitions:
         $ref: "#/definitions/RideActiveEntity"
       deepLink:
         type: "string"
-        description: "Диплинк для перехода в приложение оператора каршеринга. Заполняется в случае, если у пользователя есть активная поездка, которая создана на стороне оператора."
+        description: "Диплинк для перехода в приложение оператора каршеринга. Заполняется в случае, если у пользователя есть активная поездка, которая создана на стороне оператора. В других случаях в данном поле следует возвращать null или не передавать поле вовсе."
 
   RideActiveEntity:
     type: "object"
@@ -685,6 +684,7 @@ definitions:
       - car
       - offer
       - waitingInfo
+      - summaryInfo
       - inspectionInfo
       - pointStart
       - createdAt
@@ -710,6 +710,9 @@ definitions:
       inspectionInfo:
         description: "Информация об инспектировании автомобиля"
         $ref: "#/definitions/RideInspectionInfoEntity"
+      summaryInfo:
+        description: "Общая информация о поездке"
+        $ref: "#/definitions/RideSummaryInfoEntity"
       pointStart:
         description: "Точка старта поездки (откуда поездка была начата - по сути является точкой автомобиля при брони)"
         $ref: "#/definitions/LocationEntity"
@@ -726,7 +729,7 @@ definitions:
         description: "Время в формате timestamp (секунды) до которого время ожидания является бесплатным"
       pricePerMin:
         type: "number"
-        description: "Текущая стоимость минуты ожидания (в копейках). В поле следует передавать стоимость режима ожидания согласно тарифу (информацию не берём напрямую из тарифа, т.к. у некоторых операторов стоимость в тарифе может быть диапазоном)"
+        description: "Текущая стоимость минуты ожидания (в копейках). В поле следует передавать стоимость режима ожидания согласно тарифу (информацию не берём напрямую из тарифа, т.к. у некоторых операторов стоимость в тарифе может быть диапазоном). Может быть null, если поездка не находится в состоянии ожидания."
         example: 255
       totalDuration:
         type: "integer"
@@ -745,7 +748,7 @@ definitions:
         description: "Время в формате timestamp (секунды) до которого время режима осмотра является бесплатным"
       pricePerMin:
         type: "integer"
-        description: "Стоимость минуты осмотра автомобиля после бесплатного времени в копейках"
+        description: "Текушая стоимость минуты осмотра автомобиля после бесплатного времени (значение в копейках). Может быть null, если поездка не находится в состоянии осмотра автомобиля."
       totalDuration:
         type: "integer"
         description: "Текущая длительность режима инспектирования в рамках поездки (в секундах)"
@@ -793,6 +796,9 @@ definitions:
         enum:
           - "calculated"
           - "calculation"
+      pricePerMin:
+        type: "integer"
+        description: "Текущая стоимость минуты использования автомобиля (может быть null, если поездка не находится в состоянии активной поездки). Значение в копейках"
       distance:
         type: number
         description: "Дистанция в метрах, которую проехал пользователь в рамках поездки"
@@ -809,6 +815,9 @@ definitions:
   RideParkingInfoEntity:
     type: "object"
     properties:
+      pricePerMin:
+        type: "integer"
+        description: "Текущая стоимость минуты для режима парковки автомобиля (может быть null, если поездка не находится в состоянии активной парковки). Значение в копейках"
       totalDuration:
         type: "integer"
         description: "Общая длительность парковки (значение в секундах)"
