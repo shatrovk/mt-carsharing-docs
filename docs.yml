@@ -43,10 +43,10 @@ paths:
           description: Авторизационный токен из внешней системы авторизации
           required: false
           type: string
-        - $ref: '#/components/parameters/userLanguage'
-        - $ref: '#/components/parameters/userDevice'
-        - $ref: '#/components/parameters/userOsDevice'
-        - $ref: '#/components/parameters/userLocation'
+        - $ref: '#/parameters/userLanguage'
+        - $ref: '#/parameters/userDevice'
+        - $ref: '#/parameters/userOsDevice'
+        - $ref: '#/parameters/userLocation'
       responses:
         "200":
           description: "Успех операции"
@@ -69,10 +69,10 @@ paths:
         Например, таким значением может выступать версия оферты (v1, v2 и тд) или дата обновления оферты на стороне оператора.</p>
       operationId: "policyGet"
       parameters:
-        - $ref: '#/components/parameters/userLanguage'
-        - $ref: '#/components/parameters/userDevice'
-        - $ref: '#/components/parameters/userOsDevice'
-        - $ref: '#/components/parameters/userLocation'
+        - $ref: '#/parameters/userLanguage'
+        - $ref: '#/parameters/userDevice'
+        - $ref: '#/parameters/userOsDevice'
+        - $ref: '#/parameters/userLocation'
       consumes:
         - "application/json"
       produces:
@@ -106,10 +106,10 @@ paths:
           type: "string"
           required: true
           description: "ID автомобиля из РНИС"
-        - $ref: '#/components/parameters/userLanguage'
-        - $ref: '#/components/parameters/userDevice'
-        - $ref: '#/components/parameters/userOsDevice'
-        - $ref: '#/components/parameters/userLocation'
+        - $ref: '#/parameters/userLanguage'
+        - $ref: '#/parameters/userDevice'
+        - $ref: '#/parameters/userOsDevice'
+        - $ref: '#/parameters/userLocation'
       consumes:
         - "application/json"
       produces:
@@ -147,10 +147,10 @@ paths:
       produces:
         - "application/json"
       parameters:
-        - $ref: '#/components/parameters/userLanguage'
-        - $ref: '#/components/parameters/userDevice'
-        - $ref: '#/components/parameters/userOsDevice'
-        - $ref: '#/components/parameters/userLocation'
+        - $ref: '#/parameters/userLanguage'
+        - $ref: '#/parameters/userDevice'
+        - $ref: '#/parameters/userOsDevice'
+        - $ref: '#/parameters/userLocation'
       responses:
         "200":
           description: "Успех операции"
@@ -184,10 +184,10 @@ paths:
           required: true
           schema:
             $ref: "#/definitions/RideDto"
-        - $ref: '#/components/parameters/userLanguage'
-        - $ref: '#/components/parameters/userDevice'
-        - $ref: '#/components/parameters/userOsDevice'
-        - $ref: '#/components/parameters/userLocation'
+        - $ref: '#/parameters/userLanguage'
+        - $ref: '#/parameters/userDevice'
+        - $ref: '#/parameters/userOsDevice'
+        - $ref: '#/parameters/userLocation'
       responses:
         "200":
           description: "Успех операции"
@@ -221,10 +221,10 @@ paths:
           description: "ID поездки"
           required: true
           type: "string"
-        - $ref: '#/components/parameters/userLanguage'
-        - $ref: '#/components/parameters/userDevice'
-        - $ref: '#/components/parameters/userOsDevice'
-        - $ref: '#/components/parameters/userLocation'
+        - $ref: '#/parameters/userLanguage'
+        - $ref: '#/parameters/userDevice'
+        - $ref: '#/parameters/userOsDevice'
+        - $ref: '#/parameters/userLocation'
       responses:
         "200":
           description: "Успех операции"
@@ -264,10 +264,10 @@ paths:
           required: true
           schema:
             $ref: "#/definitions/RideCancelRequestDto"
-        - $ref: '#/components/parameters/userLanguage'
-        - $ref: '#/components/parameters/userDevice'
-        - $ref: '#/components/parameters/userOsDevice'
-        - $ref: '#/components/parameters/userLocation'
+        - $ref: '#/parameters/userLanguage'
+        - $ref: '#/parameters/userDevice'
+        - $ref: '#/parameters/userOsDevice'
+        - $ref: '#/parameters/userLocation'
       responses:
         "200":
           description: "Успех операции"
@@ -319,10 +319,10 @@ paths:
           required: true
           schema:
             $ref: "#/definitions/RideCancelConfirmDto"
-        - $ref: '#/components/parameters/userLanguage'
-        - $ref: '#/components/parameters/userDevice'
-        - $ref: '#/components/parameters/userOsDevice'
-        - $ref: '#/components/parameters/userLocation'
+        - $ref: '#/parameters/userLanguage'
+        - $ref: '#/parameters/userDevice'
+        - $ref: '#/parameters/userOsDevice'
+        - $ref: '#/parameters/userLocation'
       responses:
         "200":
           description: "Успех операции"
@@ -364,10 +364,10 @@ paths:
           type: "string"
           required: true
           description: "ID набора зон"
-        - $ref: '#/components/parameters/userLanguage'
-        - $ref: '#/components/parameters/userDevice'
-        - $ref: '#/components/parameters/userOsDevice'
-        - $ref: '#/components/parameters/userLocation'
+        - $ref: '#/parameters/userLanguage'
+        - $ref: '#/parameters/userDevice'
+        - $ref: '#/parameters/userOsDevice'
+        - $ref: '#/parameters/userLocation'
       responses:
         "200":
           description: "Набор зон"
@@ -409,10 +409,10 @@ paths:
           required: true
           schema:
             $ref: "#/definitions/RideEntity"
-        - $ref: '#/components/parameters/userLanguage'
-        - $ref: '#/components/parameters/userDevice'
-        - $ref: '#/components/parameters/userOsDevice'
-        - $ref: '#/components/parameters/userLocation'
+        - $ref: '#/parameters/userLanguage'
+        - $ref: '#/parameters/userDevice'
+        - $ref: '#/parameters/userOsDevice'
+        - $ref: '#/parameters/userLocation'
       responses:
         "200":
           description: "Успех операции"
@@ -424,44 +424,43 @@ securityDefinitions:
     name: "UserToken"
     in: "header"
 
-components:
-  parameters:
-    userLanguage:
-      in: header
-      name: Accept-Language
-      required: true
-      schema:
-        type: string
-        enum:
-          - ru
-          - en
-      description: Выбранный язык пользователя в приложении МТ
-    userDevice:
-      in: header
-      name: User-Device
-      required: true
-      schema:
-        type: string
-      description: Модель устройства пользователя. Для Android устройств отправляется в формате "${Build.MANUFACTURER}/${Build.MODEL}"
-      example: "Samsung/GT-S5830L"
-    userOsDevice:
-      in: header
-      name: User-OS-Version
-      required: true
-      schema:
-        type: string
-      description: |
-        Версия операционной системы пользователя. Для Android устройств
-        отправляется в формате "android/${SDK_VERSION}/${RELEASE}", например: "android/19/4.4.4". Формат для устройств на базе iOS ios/${UIDevice.current.systemVersion}, например: "ios/15.2.0"
-      example: "ios/15.3.0"
-    userLocation:
-      in: header
-      name: User-Location
-      required: true
-      schema:
-        type: string
-      description: Координаты пользователя в формате широта,долгота
-      example: "55.762909,37.631172"
+parameters:
+  userLanguage:
+    in: header
+    name: Accept-Language
+    required: true
+    schema:
+      type: string
+      enum:
+        - ru
+        - en
+    description: Выбранный язык пользователя в приложении МТ
+  userDevice:
+    in: header
+    name: User-Device
+    required: true
+    schema:
+      type: string
+    description: Модель устройства пользователя. Для Android устройств отправляется в формате "${Build.MANUFACTURER}/${Build.MODEL}"
+    example: "Samsung/GT-S5830L"
+  userOsDevice:
+    in: header
+    name: User-OS-Version
+    required: true
+    schema:
+      type: string
+    description: |
+      Версия операционной системы пользователя. Для Android устройств
+      отправляется в формате "android/${SDK_VERSION}/${RELEASE}", например: "android/19/4.4.4". Формат для устройств на базе iOS ios/${UIDevice.current.systemVersion}, например: "ios/15.2.0"
+    example: "ios/15.3.0"
+  userLocation:
+    in: header
+    name: User-Location
+    required: true
+    schema:
+      type: string
+    description: Координаты пользователя в формате широта,долгота
+    example: "55.762909,37.631172"
 
 definitions:
   TokenDto:
@@ -683,7 +682,6 @@ definitions:
       - id
       - deepLink
       - car
-      - offer
       - waitingInfo
       - summaryInfo
       - inspectionInfo
@@ -702,9 +700,6 @@ definitions:
       car:
         description: "Информация об автомобиле"
         $ref: "#/definitions/RideCarEntity"
-      offer:
-        description: "Информация о используемом тарифе в рамках этой брони"
-        $ref: "#/definitions/OfferRangeEntity"
       waitingInfo:
         description: "Информация о времени ожидания"
         $ref: "#/definitions/RideWaitingInfoEntity"
