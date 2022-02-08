@@ -38,24 +38,15 @@ paths:
           schema:
             $ref: "#/definitions/TokenDto"
           required: true
-        - name: Accept-Language
-          in: header
-          description: Выбранный язык пользователя в приложении МТ
-          required: true
-          type: string
-          enum:
-            - ru
-            - en
         - name: External-Auth-Token
           in: header
           description: Авторизационный токен из внешней системы авторизации
           required: false
           type: string
-        - name: User-Location
-          in: header
-          description: Координаты пользователя в формате широта,долгота
-          required: false
-          type: string
+        - $ref: '#/components/parameters/userLanguage'
+        - $ref: '#/components/parameters/userDevice'
+        - $ref: '#/components/parameters/userOsDevice'
+        - $ref: '#/components/parameters/userLocation'
       responses:
         "200":
           description: "Успех операции"
@@ -78,19 +69,10 @@ paths:
         Например, таким значением может выступать версия оферты (v1, v2 и тд) или дата обновления оферты на стороне оператора.</p>
       operationId: "policyGet"
       parameters:
-        - name: Accept-Language
-          in: header
-          description: Выбранный язык пользователя в приложении МТ
-          required: true
-          type: string
-          enum:
-            - ru
-            - en
-        - name: User-Location
-          in: header
-          description: Координаты пользователя в формате широта,долгота
-          required: false
-          type: string
+        - $ref: '#/components/parameters/userLanguage'
+        - $ref: '#/components/parameters/userDevice'
+        - $ref: '#/components/parameters/userOsDevice'
+        - $ref: '#/components/parameters/userLocation'
       consumes:
         - "application/json"
       produces:
@@ -100,9 +82,6 @@ paths:
           description: "Успех операции"
           schema:
             $ref: "#/definitions/PolicyEntity"
-      security:
-        - { }
-        - userTokenSec: [ ]
 
   /car/{id}:
     get:
@@ -110,6 +89,9 @@ paths:
         - "carsharing"
       summary: Получение информации об автомобиле
       description: |
+        <p>Доступ к методу может быть осуществлён как с авторизованным токеном, так и без него
+        (для неавторизованных пользователей приложения МТ). В этом случае оператор может
+        вернуть примерный диапазон цен для использования автомобиля.</p>
         <p>Метод используется для вывода информации об автомобиле и доступных тарифах для него.</p>
         <p>Метод вызывается в момент открытия пользователем карточки автомобиля.</p>
         <p>Метод может вызываться без передачи авторизационного токена - в этом случае информация
@@ -124,19 +106,10 @@ paths:
           type: "string"
           required: true
           description: "ID автомобиля из РНИС"
-        - name: Accept-Language
-          in: header
-          description: Выбранный язык пользователя в приложении МТ
-          required: true
-          type: string
-          enum:
-            - ru
-            - en
-        - name: User-Location
-          in: header
-          description: Координаты пользователя в формате широта,долгота
-          required: false
-          type: string
+        - $ref: '#/components/parameters/userLanguage'
+        - $ref: '#/components/parameters/userDevice'
+        - $ref: '#/components/parameters/userOsDevice'
+        - $ref: '#/components/parameters/userLocation'
       consumes:
         - "application/json"
       produces:
@@ -160,28 +133,24 @@ paths:
         - "carsharing"
       summary: "Возвращает информацию об активной поездке пользователя"
       description: |
+        <p>Доступ к методу только с авторизационным токеном.</p>
         <p>Метод возвращает сущность активной поездки пользователя.</p>
-        <p>В случае, если у пользователя отсутствует поездка - в поле status возвращается значение <i>notFound</i>
-        (поля ride и deepLink в этом случае = null).</p>
+        <p>В случае, если у пользователя отсутствует активная поездка, метод должен возвращать HTTP код 404 с пустым телом ответа.</p>
         <p>В случае, если у пользователя есть поездка, но она была иницирована не через МТ, в поле status следует
         передать значение <i>rideService</i> и в поле deepLink передать диплинк для перехода в
         приложения оператора каршеринга.</p>
         <p>В случае, если у пользователя имеется активная поездка, которая была иницирована через МТ,
-        в поле status возвращается со значением <i>active</i>, в поле ride передаётся сущность поездки.
+        в поле status возвращается со значением <i>active</i>, в поле ride передаётся сущность поездки.</p>
       operationId: "currentRideGet"
       consumes:
         - "application/json"
       produces:
         - "application/json"
       parameters:
-        - name: Accept-Language
-          in: header
-          description: Выбранный язык пользователя в приложении МТ
-          required: true
-          type: string
-          enum:
-            - ru
-            - en
+        - $ref: '#/components/parameters/userLanguage'
+        - $ref: '#/components/parameters/userDevice'
+        - $ref: '#/components/parameters/userOsDevice'
+        - $ref: '#/components/parameters/userLocation'
       responses:
         "200":
           description: "Успех операции"
@@ -199,6 +168,7 @@ paths:
         - "carsharing"
       summary: "Бронирование автомобиля за пользователем"
       description: |
+        <p>Доступ к методу только с авторизационным токеном.</p>
         <p>Метод брони автомобиля за пользователем.</p>
         <p>В момент создания брони на стороне каршеринг сервиса
         происходит холдирование средств за поездку. </p>
@@ -214,19 +184,10 @@ paths:
           required: true
           schema:
             $ref: "#/definitions/RideDto"
-        - name: Accept-Language
-          in: header
-          description: Выбранный язык пользователя в приложении МТ
-          required: true
-          type: string
-          enum:
-            - ru
-            - en
-        - name: User-Location
-          in: header
-          description: Координаты пользователя в формате широта,долгота
-          required: false
-          type: string
+        - $ref: '#/components/parameters/userLanguage'
+        - $ref: '#/components/parameters/userDevice'
+        - $ref: '#/components/parameters/userOsDevice'
+        - $ref: '#/components/parameters/userLocation'
       responses:
         "200":
           description: "Успех операции"
@@ -246,7 +207,9 @@ paths:
       tags:
         - "carsharing"
       summary: "Получение брони по ID"
-      description: "Метод возвращает сущность поездки."
+      description: |
+        <p>Доступ к методу только с авторизационным токеном.</p>
+        <p>Метод возвращает сущность поездки.</p>
       operationId: "rideGet"
       consumes:
         - "application/json"
@@ -258,19 +221,10 @@ paths:
           description: "ID поездки"
           required: true
           type: "string"
-        - name: Accept-Language
-          in: header
-          description: Выбранный язык пользователя в приложении МТ
-          required: true
-          type: string
-          enum:
-            - ru
-            - en
-        - name: User-Location
-          in: header
-          description: Координаты пользователя в формате широта,долгота
-          required: false
-          type: string
+        - $ref: '#/components/parameters/userLanguage'
+        - $ref: '#/components/parameters/userDevice'
+        - $ref: '#/components/parameters/userOsDevice'
+        - $ref: '#/components/parameters/userLocation'
       responses:
         "200":
           description: "Успех операции"
@@ -289,7 +243,9 @@ paths:
         - "carsharing"
       summary: "Запрос на отмену брони"
       description: |
-        <p>Метод используется для проверки возможности отмены брони и получения сообщения, которое пользователь увидит
+        <p>Доступ к методу только с авторизационным токеном.</p>
+        <p>Метод используется для проверки возможности отмены брони и получения
+        сообщения, которое пользователь увидит
         на подтверждающем отмену шаге.</p>
       operationId: "rideCancelRequest"
       consumes:
@@ -308,19 +264,10 @@ paths:
           required: true
           schema:
             $ref: "#/definitions/RideCancelRequestDto"
-        - name: Accept-Language
-          in: header
-          description: Выбранный язык пользователя в приложении МТ
-          required: true
-          type: string
-          enum:
-            - ru
-            - en
-        - name: User-Location
-          in: header
-          description: Координаты пользователя в формате широта,долгота
-          required: false
-          type: string
+        - $ref: '#/components/parameters/userLanguage'
+        - $ref: '#/components/parameters/userDevice'
+        - $ref: '#/components/parameters/userOsDevice'
+        - $ref: '#/components/parameters/userLocation'
       responses:
         "200":
           description: "Успех операции"
@@ -343,6 +290,7 @@ paths:
         - "carsharing"
       summary: "Подтверждение отмены брони"
       description: |
+        <p>Доступ к методу только с авторизационным токеном.</p>
         <p>
         Метод используется для подтверждения отмены брони автомобиля.
         В метод передаётся ID запроса на отмену брони, который
@@ -371,19 +319,10 @@ paths:
           required: true
           schema:
             $ref: "#/definitions/RideCancelConfirmDto"
-        - name: Accept-Language
-          in: header
-          description: Выбранный язык пользователя в приложении МТ
-          required: true
-          type: string
-          enum:
-            - ru
-            - en
-        - name: User-Location
-          in: header
-          description: Координаты пользователя в формате широта,долгота
-          required: false
-          type: string
+        - $ref: '#/components/parameters/userLanguage'
+        - $ref: '#/components/parameters/userDevice'
+        - $ref: '#/components/parameters/userOsDevice'
+        - $ref: '#/components/parameters/userLocation'
       responses:
         "200":
           description: "Успех операции"
@@ -406,9 +345,14 @@ paths:
         - "carsharing"
       summary: "Получение набора зон по ID"
       description: |
-        Метод возвращает набор зон, в которых возможно совершить поездку, запрещённые и доступные для завершения аренды.
-        В метод передаётся ID набора зон, который приходит в карточке автомобиля (availableZoneSet.id).
-        Вызов метода будет происходить в том случае, если информация о наборе зон с таким ID отсутствует в БД МТ, или набор зон был обновлён (параметр availableZoneSet.updatedAt в карточке автомобиля)
+        <p>Доступ к методу только с авторизационным токеном.</p>
+        <p>Метод возвращает набор зон, в которых возможно совершить поездку,
+        запрещённые и доступные для завершения аренды.</p>
+        <p>В метод передаётся ID набора зон, который приходит в карточке
+        автомобиля (availableZoneSet.id).</p>
+        <p>Вызов метода будет происходить в том случае, если информация о наборе зон
+        с таким ID отсутствует в БД МТ, или набор зон был обновлён
+        (параметр CarEntity.zones.sets[].setUpdatedAt в карточке автомобиля)</p>
       operationId: "zoneSetGet"
       consumes:
         - "application/json"
@@ -420,19 +364,10 @@ paths:
           type: "string"
           required: true
           description: "ID набора зон"
-        - name: Accept-Language
-          in: header
-          description: Выбранный язык пользователя в приложении МТ
-          required: true
-          type: string
-          enum:
-            - ru
-            - en
-        - name: User-Location
-          in: header
-          description: Координаты пользователя в формате широта,долгота
-          required: false
-          type: string
+        - $ref: '#/components/parameters/userLanguage'
+        - $ref: '#/components/parameters/userDevice'
+        - $ref: '#/components/parameters/userOsDevice'
+        - $ref: '#/components/parameters/userLocation'
       responses:
         "200":
           description: "Набор зон"
@@ -474,14 +409,10 @@ paths:
           required: true
           schema:
             $ref: "#/definitions/RideEntity"
-        - name: Accept-Language
-          in: header
-          description: Выбранный язык пользователя в приложении МТ
-          required: true
-          type: string
-          enum:
-            - ru
-            - en
+        - $ref: '#/components/parameters/userLanguage'
+        - $ref: '#/components/parameters/userDevice'
+        - $ref: '#/components/parameters/userOsDevice'
+        - $ref: '#/components/parameters/userLocation'
       responses:
         "200":
           description: "Успех операции"
@@ -492,6 +423,45 @@ securityDefinitions:
     description: "Токен пользователя, полученный в рамках вызова метода POST /token"
     name: "UserToken"
     in: "header"
+
+components:
+  parameters:
+    userLanguage:
+      in: header
+      name: Accept-Language
+      required: true
+      schema:
+        type: string
+        enum:
+          - ru
+          - en
+      description: Выбранный язык пользователя в приложении МТ
+    userDevice:
+      in: header
+      name: User-Device
+      required: true
+      schema:
+        type: string
+      description: Модель устройства пользователя. Для Android устройств отправляется в формате "${Build.MANUFACTURER}/${Build.MODEL}"
+      example: "Samsung/GT-S5830L"
+    userOsDevice:
+      in: header
+      name: User-OS-Version
+      required: true
+      schema:
+        type: string
+      description: |
+        Версия операционной системы пользователя. Для Android устройств
+        отправляется в формате "android/${SDK_VERSION}/${RELEASE}", например: "android/19/4.4.4". Формат для устройств на базе iOS ios/${UIDevice.current.systemVersion}, например: "ios/15.2.0"
+      example: "ios/15.3.0"
+    userLocation:
+      in: header
+      name: User-Location
+      required: true
+      schema:
+        type: string
+      description: Координаты пользователя в формате широта,долгота
+      example: "55.762909,37.631172"
 
 definitions:
   TokenDto:
@@ -623,6 +593,7 @@ definitions:
         description: "Статус поездки"
         enum:
           - active
+          - waiting
           - parking
           - canceling
           - inspection
@@ -775,6 +746,10 @@ definitions:
       pricePerMin:
         type: "integer"
         description: "Стоимость минуты осмотра автомобиля после бесплатного времени в копейках"
+      totalDuration:
+        type: "integer"
+        description: "Текущая длительность режима инспектирования в рамках поездки (в секундах)"
+        example: 180
       totalPrice:
         type: "integer"
         description: "Итоговая стоимость за инспектирование автомобиля (в копейках)"
@@ -1037,17 +1012,20 @@ definitions:
         description: "Стоимость минуты ожидания брони"
         $ref: "#/definitions/OfferRangePriceEntity"
       offerParking:
-        description: "Стоимость тарифа для режима парковки автомобиля"
+        description: "Стоимость минуты для режима парковки автомобиля"
         $ref: "#/definitions/OfferRangePriceEntity"
       offerRiding:
-        description: "Стоимость тарифа для режима поездки"
+        description: "Стоимость минуты для режима поездки"
+        $ref: "#/definitions/OfferRangePriceEntity"
+      offerInspection:
+        description: |
+          Стоимость минуты платного осмотра автомобиля после истёкшего времени
+          бесплатного осмотра (поле freeInspectionTime). В случае если осмотр автомобиля бесплатный
+          и без ограничения по времени - следует передать null в полях freeInspectionTime, offerInspection.
         $ref: "#/definitions/OfferRangePriceEntity"
       freeInspectionTime:
         type: "integer"
         description: "Время бесплатного времени для осмотра автомобиля в секундах. Если бесплатного времени ожидания не предусмотрено, следует пустое значение (null)."
-      inspectionPricePerMin:
-        type: "integer"
-        description: "Стоимость минуты платного осмотра автомобиля после истёкшего времени бесплатного осмотра (поле freeInspectionTime). В случае если осмотр автомобиля бесплатный и без ограничения по времени - следует передать null в полях freeInspectionTime, inspectionPricePerMin."
       validUntil:
         type: "integer"
         description: "Время в timestamp (секунды), до которого дейсвителено это предложение. Может быть null в случае если пользователь не авторизован."
