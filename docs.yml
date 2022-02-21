@@ -1066,6 +1066,8 @@ definitions:
 
   ZoneEntity:
     type: "object"
+    required:
+      - geojson
     properties:
       geojson:
         type: "object"
