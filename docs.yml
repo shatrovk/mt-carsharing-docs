@@ -7,6 +7,7 @@ info:
     <p>Доступ к API на стороне МТ будет ограничен списком IP адресов каршеринг сервисов, а также уникальным API ключом для каждого каршеринга. Данный API ключ необходимо передавать в HTTP заголовке Api-Key.</p>
     <p>Для работы с API каршеринга, МТ должен получить API токен для каждого пользователя (см. ниже метод POST /token). Токен передаётся в каждый метод в HTTP заголовке User-Token.</p>
   title: "MT + сервисы каршеринга"
+  version: "1"
 tags:
   - name: "carsharing"
     description: "API методы реализованные на стороне каршеринг-сервиса"
@@ -1066,6 +1067,8 @@ definitions:
 
   ZoneEntity:
     type: "object"
+    required:
+      - geojson
     properties:
       geojson:
         type: "object"
