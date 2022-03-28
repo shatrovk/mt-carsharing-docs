@@ -986,6 +986,21 @@ definitions:
       <p>Описание тарифа пользования автомобилем. В случае, если пользозователь неавторизован, есть возможность
       передавать стоимость в диапазоне от...до (см. поля min/max в сущности OfferRangeEntity). </p>
       <p>Для авторизованного пользователя в поля min/max следует передавать одинаковую стоимость.</p>
+    required:
+      - id
+      - insurancePolicy
+      - description
+      - prePaymentInformation
+      - name
+      - usagePrice
+      - holdAmount
+      - freeWaitingTime
+      - offerWaiting
+      - offerParking
+      - offerRiding
+      - offerInspection
+      - freeInspectionTime
+      - validUntil
     properties:
       id:
         description: "ID предложения цены за аренду. ID будет использован при бронировании автомобиля. Может быть null, в случае если пользователь неавторизон."
