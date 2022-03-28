@@ -1104,6 +1104,7 @@
     },
     "OfferRangeEntity" : {
       "type" : "object",
+      "required" : [ "description", "freeInspectionTime", "freeWaitingTime", "holdAmount", "id", "insurancePolicy", "name", "offerInspection", "offerParking", "offerRiding", "offerWaiting", "prePaymentInformation", "usagePrice", "validUntil" ],
       "properties" : {
         "id" : {
           "type" : "string",
