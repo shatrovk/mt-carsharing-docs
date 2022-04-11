@@ -699,7 +699,7 @@
         "status" : {
           "type" : "string",
           "description" : "Статус поездки",
-          "enum" : [ "active", "waiting", "parking", "canceling", "inspection" ]
+          "enum" : [ "booking", "active", "waiting", "parking", "canceling", "inspection" ]
         }
       }
     },
@@ -1104,6 +1104,7 @@
     },
     "OfferRangeEntity" : {
       "type" : "object",
+      "required" : [ "description", "freeInspectionTime", "freeWaitingTime", "holdAmount", "id", "insurancePolicy", "name", "offerInspection", "offerParking", "offerRiding", "offerWaiting", "prePaymentInformation", "usagePrice", "validUntil" ],
       "properties" : {
         "id" : {
           "type" : "string",
@@ -1284,7 +1285,7 @@
         "errorCode" : {
           "type" : "string",
           "description" : "Код ошибки при бронировании автомобиля. Коды ошибок:\n<ul>\n  <li>carNotFound - передан некорректный ID автомобиля;</li>\n  <li>carAlreadyBooked - машина уже забронирована другим пользователем;</li>\n  <li>userHasRide - у пользователя уже есть активная поездка или бронь;</li>\n  <li>depricatedPolicy - принятая пользователем оферта устарела;</li>\n  <li>userDebt - у пользователя есть задолженность;</li>\n  <li>userBlocked - пользователь заблокирован;</li>\n  <li>carNotAvailable - автомобиль недоступен для этого пользователя;</li>\n  <li>paymentError - ошибка при проведении оплаты;</li>\n  <li>invalidOffer - передан неверный или просроченный тариф;</li>\n  <li>tooAwayFromCar - пользователь находится слишком далеко от автомобиля;</li>\n  <li>other - другая ошибка, которую на данный момент не поддерживает логика МТ.</li>\n</ul>\n",
-          "enum" : [ "carNotFound", "carAlreadyBooked", "carNotAvailable", "userHasRide", "depricatedPolicy", "userBlocked", "userDebt", "paymentError", "tooAwayFromCar", "other" ]
+          "enum" : [ "carNotFound", "carAlreadyBooked", "carNotAvailable", "userHasRide", "depricatedPolicy", "userBlocked", "userDebt", "paymentError", "invalidOffer", "tooAwayFromCar", "other" ]
         }
       }
     },
