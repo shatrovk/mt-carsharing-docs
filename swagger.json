@@ -337,6 +337,14 @@
           "required" : true,
           "type" : "string"
         }, {
+          "in" : "body",
+          "name" : "body",
+          "description" : "Данные для запроса на отмену брони",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/definitions/RideCancelRequestDto"
+          }
+        }, {
           "name" : "Accept-Language",
           "in" : "header",
           "description" : "Выбранный язык пользователя в приложении МТ",
@@ -573,7 +581,7 @@
     },
     "RideDto" : {
       "type" : "object",
-      "required" : [ "carId", "offerId", "policyVersion" ],
+      "required" : [ "carId", "offerId", "policyVersion", "userLocation" ],
       "properties" : {
         "carId" : {
           "type" : "string",
@@ -586,6 +594,19 @@
         "policyVersion" : {
           "type" : "string",
           "description" : "Версия оферты, которая принята у пользователя на стороне МТ. Поле может быть null, если схема работы оператора не предполагает принятия оферты (конфигурируется на стороне МТ для каждого оператора)."
+        },
+        "userLocation" : {
+          "description" : "Позиция пользователя в момент оформления заказа",
+          "$ref" : "#/definitions/LocationDto"
+        }
+      }
+    },
+    "RideCancelRequestDto" : {
+      "type" : "object",
+      "required" : [ "userLocation" ],
+      "properties" : {
+        "userLocation" : {
+          "$ref" : "#/definitions/LocationDto"
         }
       }
     },
