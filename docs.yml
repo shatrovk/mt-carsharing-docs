@@ -1158,6 +1158,7 @@ definitions:
           - userBlocked
           - userDebt
           - paymentError
+          - invalidOffer
           - tooAwayFromCar
           - other
 

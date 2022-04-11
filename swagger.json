@@ -337,14 +337,6 @@
           "required" : true,
           "type" : "string"
         }, {
-          "in" : "body",
-          "name" : "body",
-          "description" : "Данные для запроса на отмену брони",
-          "required" : true,
-          "schema" : {
-            "$ref" : "#/definitions/RideCancelRequestDto"
-          }
-        }, {
           "name" : "Accept-Language",
           "in" : "header",
           "description" : "Выбранный язык пользователя в приложении МТ",
@@ -581,7 +573,7 @@
     },
     "RideDto" : {
       "type" : "object",
-      "required" : [ "carId", "offerId", "policyVersion", "userLocation" ],
+      "required" : [ "carId", "offerId", "policyVersion" ],
       "properties" : {
         "carId" : {
           "type" : "string",
@@ -594,19 +586,6 @@
         "policyVersion" : {
           "type" : "string",
           "description" : "Версия оферты, которая принята у пользователя на стороне МТ. Поле может быть null, если схема работы оператора не предполагает принятия оферты (конфигурируется на стороне МТ для каждого оператора)."
-        },
-        "userLocation" : {
-          "description" : "Позиция пользователя в момент оформления заказа",
-          "$ref" : "#/definitions/LocationDto"
-        }
-      }
-    },
-    "RideCancelRequestDto" : {
-      "type" : "object",
-      "required" : [ "userLocation" ],
-      "properties" : {
-        "userLocation" : {
-          "$ref" : "#/definitions/LocationDto"
         }
       }
     },
@@ -699,7 +678,7 @@
         "status" : {
           "type" : "string",
           "description" : "Статус поездки",
-          "enum" : [ "active", "waiting", "parking", "canceling", "inspection" ]
+          "enum" : [ "booking", "active", "waiting", "parking", "canceling", "inspection" ]
         }
       }
     },
@@ -1285,7 +1264,7 @@
         "errorCode" : {
           "type" : "string",
           "description" : "Код ошибки при бронировании автомобиля. Коды ошибок:\n<ul>\n  <li>carNotFound - передан некорректный ID автомобиля;</li>\n  <li>carAlreadyBooked - машина уже забронирована другим пользователем;</li>\n  <li>userHasRide - у пользователя уже есть активная поездка или бронь;</li>\n  <li>depricatedPolicy - принятая пользователем оферта устарела;</li>\n  <li>userDebt - у пользователя есть задолженность;</li>\n  <li>userBlocked - пользователь заблокирован;</li>\n  <li>carNotAvailable - автомобиль недоступен для этого пользователя;</li>\n  <li>paymentError - ошибка при проведении оплаты;</li>\n  <li>invalidOffer - передан неверный или просроченный тариф;</li>\n  <li>tooAwayFromCar - пользователь находится слишком далеко от автомобиля;</li>\n  <li>other - другая ошибка, которую на данный момент не поддерживает логика МТ.</li>\n</ul>\n",
-          "enum" : [ "carNotFound", "carAlreadyBooked", "carNotAvailable", "userHasRide", "depricatedPolicy", "userBlocked", "userDebt", "paymentError", "tooAwayFromCar", "other" ]
+          "enum" : [ "carNotFound", "carAlreadyBooked", "carNotAvailable", "userHasRide", "depricatedPolicy", "userBlocked", "userDebt", "paymentError", "invalidOffer", "tooAwayFromCar", "other" ]
         }
       }
     },
