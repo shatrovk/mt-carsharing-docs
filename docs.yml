@@ -379,9 +379,62 @@ paths:
       security:
         - userTokenSec: [ ]
 
+  /payment:
+    post:
+      tags:
+        - "carsharing"
+      summary: "Оплата пользователем в приложении Московский Транспорт"
+      description: |
+        <p>Доступ к методу только с авторизационным токеном.</p>
+        <p>Метод запроса оплаты пользователем в приложении.</p>
+        <p>Метод может вернуть статус платежа сразу, если возможна моментальная оплатаю
+        Если есть задержка в оплате, возвращается статус pending и ожидается коллбек на
+        https://carsharing.moscowtransport.app/payment Если платёж уже в обработке,
+        возвращается ошибка 400 с платежом в статусе pending. Если возникает проблема с валидностью
+        переданного токена, возвращается ошиибка 400 с платежом в статусе error. Ошибка оплаты на стороне банка
+        (из-за нехватки средств) возвращается error в статусе 200.
+        </p>
+      operationId: "ridePayment"
+      consumes:
+        - "application/json"
+      produces:
+        - "application/json"
+      parameters:
+        - name: "id"
+          in: "path"
+          type: "string"
+          required: true
+          description: "ID платежа"
+        - in: "body"
+          name: "body"
+          description: "Данные для бронирования автомобиля"
+          required: true
+          schema:
+            $ref: "#/definitions/PaymentDto"
+        - $ref: '#/parameters/userLanguage'
+        - $ref: '#/parameters/userDevice'
+        - $ref: '#/parameters/userOsDevice'
+        - $ref: '#/parameters/userLocation'
+      responses:
+        "200":
+          description: "Успех операции"
+          schema:
+            type: array
+            items:
+              $ref: "#/definitions/PaymentEntity"
+        "400":
+          description: "Ошибка при оплате"
+          schema:
+            type: array
+            items:
+              $ref: "#/definitions/PaymentErrorEntity"
+        "401":
+          description: "Переданный токен невалиден"
+      security:
+        - userTokenSec: [ ]
+
   /ride-info:
     post:
-      deprecated: true
       tags:
         - "mt"
       summary: "Оповещение об изменениях в поездке"
@@ -410,10 +463,39 @@ paths:
           required: true
           schema:
             $ref: "#/definitions/RideEntity"
-        - $ref: '#/parameters/userLanguage'
-        - $ref: '#/parameters/userDevice'
-        - $ref: '#/parameters/userOsDevice'
-        - $ref: '#/parameters/userLocation'
+      responses:
+        "200":
+          description: "Успех операции"
+
+  /payment-info:
+    post:
+      tags:
+        - "mt"
+      summary: "Оповещение об изменениях статуса платежа"
+      description: |
+        <p>Метод для оповещения статуса оплаты на стороне сервиса каршеринга.</p>
+        <p>Адрес метода: <b>POST https://carsharing.moscowtransport.app/payment</b></p>
+        <p>Метод вызывается каршеринг-сервисом в момент получения оплаты:
+          <ul>
+            <li>оплата поездки пользователем в приложении каршеринга;</li>
+            <li>оплата через приложение Московский Транспорт;</li>
+            <li>Ошибка оплаты через приложение Московский Транспорт;</li>
+          </ul>
+        </p>
+      operationId: "paymentNotification"
+      consumes:
+        - "application/json"
+      produces:
+        - "application/json"
+      parameters:
+        - in: "body"
+          name: "body"
+          description: "Данные оплаты"
+          required: true
+          schema:
+            type: array
+            items:
+              $ref: "#/definitions/RidePayment"
       responses:
         "200":
           description: "Успех операции"
@@ -497,6 +579,18 @@ definitions:
       userLocation:
         description: "Позиция пользователя в момент оформления заказа"
         $ref: "#/definitions/LocationDto"
+
+  PaymentDto:
+    type: object
+    properties:
+      token:
+        type: string
+        description: Платёжный токен b2p
+      payments:
+        type: array
+        description: ID платежей
+        items:
+          type: string
 
   RideCancelRequestDto:
     type: "object"
@@ -617,6 +711,10 @@ definitions:
       id:
         description: "ID поездки"
         type: "string"
+      payments:
+        type: array
+        items:
+          $ref: '#/definitions/RidePayment'
       deepLink:
         type: "string"
         description: "Диплинк для перехода в приложение оператора каршеринга"
@@ -677,6 +775,72 @@ definitions:
           - canceling
           - canceled
           - inspection
+
+  RidePayment:
+    type: object
+    required:
+      - id
+      - amount
+      - status
+    properties:
+      id:
+        type: string
+        description: ID платежа
+      amount:
+        type: integer
+        description: Стоимость поездки в копейках
+      description:
+        type: string
+        description: Назначение платежа
+      error:
+        type: string
+        description: Текст ошибки оплаты #todo: возможно сделать enum по ошибкам b2p?
+      status:
+        type: string
+        enum:
+          - debt
+          - failed
+          - paid
+      date:
+        type: integer
+        description: Дата выставления платежа
+
+  PaymentEntity:
+    type: object
+    required:
+      - id
+      - status
+    properties:
+      id:
+        type: string
+        description: ID платежа
+      error:
+        type: string
+        description: Текст ошибки оплаты #todo: возможно сделать enum по ошибкам b2p?
+      status:
+        type: string
+        enum:
+          - pending
+          - paid
+          - failed
+
+  PaymentErrorEntity:
+    type: object
+    required:
+      - id
+      - status
+    properties:
+      id:
+        type: string
+        description: ID платежа
+      error:
+        type: string
+        description: Текст ошибки оплаты #todo: возможно сделать enum по ошибкам b2p?
+      status:
+        type: string
+        enum:
+          - failed
+          - pending
 
   RideCreatedEntity:
     type: "object"
