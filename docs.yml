@@ -592,7 +592,6 @@ definitions:
         type: "string"
         description: "Статус поездки"
         enum:
-          - booking
           - active
           - waiting
           - parking
@@ -670,7 +669,6 @@ definitions:
         type: "string"
         description: "Статус поездки"
         enum:
-          - booking
           - active
           - parking
           - finished
