@@ -281,7 +281,7 @@ paths:
         "401":
           description: "Переданный токен невалиден"
         "405":
-          description: "Данный метод не реализован на стороне оператора. В этом случае следом за этим методом будет вызван метод /ride/{id}/cancel-confirm без передачи confirmationRequestId"
+          description: "Данный метод не реализован на стороне оператора либо сообщение не требуется. В этом случае следом за этим методом будет вызван метод /ride/{id}/cancel-confirm без передачи confirmationRequestId"
       security:
         - userTokenSec: [ ]
 
@@ -511,7 +511,7 @@ definitions:
     properties:
       confirmationRequestId:
         type: "string"
-        description: "ID запроса на отмену, который получен из метода /ride/{id}/cancel/request. Поле может быть null (см. описание метода /ride/{id}/cancel-request)"
+        description: "ID запроса на отмену, который получен из метода /ride/{id}/cancel/request. Поле не приходит, когда метод /ride/{id}/cancel-request отдаёт код 405, отправляется запрос с пустым json - {}"
 
   ActiveRideInfoEntity:
     type: "object"
@@ -768,15 +768,14 @@ definitions:
 
   RideCancelConfirmEntity:
     type: "object"
+    required:
+      - id
+      - message
     properties:
       id:
         type: "string"
         description: |
           <p>ID подтверждения отмены, который необходим отправить в метод /ride/{id}/cancel-confirm.</p>
-          <p>
-          Поле может быть null, если у оператора каршеринга нет необходимости о чём-то
-          предупредить пользователя при отмене брони. В этом случае будет вызван метод /ride/{id}/cancel-confirm с
-          пустым полем confirmationRequestId в запросе.</p>
       message:
         type: "string"
         description: "Сообщение, которое получит пользователь на подтверждающем экране при отмене брони. Поле может быть null, если у оператора каршеринга нет необходимости о чём-то предупредить пользователя при отмене брони."
@@ -970,6 +969,9 @@ definitions:
 
   CarZonesSetEntity:
     type: object
+    required:
+      - setId
+      - setUpdatedAt
     properties:
       setId:
         type: "string"
