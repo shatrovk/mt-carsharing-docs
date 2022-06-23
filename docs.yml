@@ -1165,6 +1165,7 @@ definitions:
             <li>paymentError - ошибка при проведении оплаты;</li>
             <li>invalidOffer - передан неверный или просроченный тариф;</li>
             <li>tooAwayFromCar - пользователь находится слишком далеко от автомобиля;</li>
+            <li>bookingAlreadyExists - есть другая бронь у пользователя</li>
             <li>other - другая ошибка, которую на данный момент не поддерживает логика МТ.</li>
           </ul>
         enum:
@@ -1179,6 +1180,7 @@ definitions:
           - invalidOffer
           - tooAwayFromCar
           - other
+          - bookingAlreadyExists
 
   ErrorTokenCreationEntity:
     type: "object"
