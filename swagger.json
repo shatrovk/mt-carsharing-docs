@@ -493,7 +493,7 @@
           "description" : "Координаты пользователя в формате широта,долгота",
           "required" : true
         } ],
-        "security" : [ {
+        "security" : [ { }, {
           "userTokenSec" : [ ]
         } ],
         "responses" : {
@@ -615,7 +615,7 @@
       "properties" : {
         "confirmationRequestId" : {
           "type" : "string",
-          "description" : "ID запроса на отмену, который получен из метода /ride/{id}/cancel/request. Поле не приходит когда метод /ride/{id}/cancel-request отдаёт код 405, отправляется запрос с пустым json - {}"
+          "description" : "ID запроса на отмену, который получен из метода /ride/{id}/cancel/request. Поле не приходит, когда метод /ride/{id}/cancel-request отдаёт код 405, отправляется запрос с пустым json - {}"
         }
       }
     },

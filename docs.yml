@@ -377,6 +377,7 @@ paths:
         "404":
           description: "Набор зон с переданным ID не найден"
       security:
+        - { }
         - userTokenSec: [ ]
 
   /ride-info:
