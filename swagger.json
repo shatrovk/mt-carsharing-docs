@@ -493,7 +493,7 @@
           "description" : "Координаты пользователя в формате широта,долгота",
           "required" : true
         } ],
-        "security" : [ {
+        "security" : [ { }, {
           "userTokenSec" : [ ]
         } ],
         "responses" : {
