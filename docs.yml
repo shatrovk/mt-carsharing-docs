@@ -1159,7 +1159,7 @@ definitions:
             <li>carNotFound - передан некорректный ID автомобиля;</li>
             <li>carAlreadyBooked - машина уже забронирована другим пользователем;</li>
             <li>userHasRide - у пользователя уже есть активная поездка или бронь;</li>
-            <li>depricatedPolicy - принятая пользователем оферта устарела;</li>
+            <li>deprecatedPolicy - принятая пользователем оферта устарела;</li>
             <li>userDebt - у пользователя есть задолженность;</li>
             <li>userBlocked - пользователь заблокирован;</li>
             <li>carNotAvailable - автомобиль недоступен для этого пользователя;</li>
@@ -1173,7 +1173,7 @@ definitions:
           - carAlreadyBooked
           - carNotAvailable
           - userHasRide
-          - depricatedPolicy
+          - deprecatedPolicy
           - userBlocked
           - userDebt
           - paymentError
