@@ -7,7 +7,7 @@ info:
     <p>Доступ к API на стороне МТ будет ограничен списком IP адресов каршеринг сервисов, а также уникальным API ключом для каждого каршеринга. Данный API ключ необходимо передавать в HTTP заголовке Api-Key.</p>
     <p>Для работы с API каршеринга, МТ должен получить API токен для каждого пользователя (см. ниже метод POST /token). Токен передаётся в каждый метод в HTTP заголовке User-Token.</p>
   title: "MT + сервисы каршеринга"
-  version: "1"
+  version: "2.0"
 tags:
   - name: "carsharing"
     description: "API методы реализованные на стороне каршеринг-сервиса"
@@ -281,7 +281,7 @@ paths:
         "401":
           description: "Переданный токен невалиден"
         "405":
-          description: "Данный метод не реализован на стороне оператора. В этом случае следом за этим методом будет вызван метод /ride/{id}/cancel-confirm без передачи confirmationRequestId"
+          description: "Данный метод не реализован на стороне оператора либо сообщение не требуется. В этом случае следом за этим методом будет вызван метод /ride/{id}/cancel-confirm без передачи confirmationRequestId"
       security:
         - userTokenSec: [ ]
 
@@ -377,64 +377,12 @@ paths:
         "404":
           description: "Набор зон с переданным ID не найден"
       security:
-        - userTokenSec: [ ]
-
-  /payment:
-    post:
-      tags:
-        - "carsharing"
-      summary: "Оплата пользователем в приложении Московский Транспорт"
-      description: |
-        <p>Доступ к методу только с авторизационным токеном.</p>
-        <p>Метод запроса оплаты пользователем в приложении.</p>
-        <p>Метод может вернуть статус платежа сразу, если возможна моментальная оплатаю
-        Если есть задержка в оплате, возвращается статус pending и ожидается коллбек на
-        https://carsharing.moscowtransport.app/payment Если платёж уже в обработке,
-        возвращается ошибка 400 с платежом в статусе pending. Если возникает проблема с валидностью
-        переданного токена, возвращается ошиибка 400 с платежом в статусе error. Ошибка оплаты на стороне банка
-        (из-за нехватки средств) возвращается error в статусе 200.
-        </p>
-      operationId: "ridePayment"
-      consumes:
-        - "application/json"
-      produces:
-        - "application/json"
-      parameters:
-        - name: "id"
-          in: "path"
-          type: "string"
-          required: true
-          description: "ID платежа"
-        - in: "body"
-          name: "body"
-          description: "Данные для бронирования автомобиля"
-          required: true
-          schema:
-            $ref: "#/definitions/PaymentDto"
-        - $ref: '#/parameters/userLanguage'
-        - $ref: '#/parameters/userDevice'
-        - $ref: '#/parameters/userOsDevice'
-        - $ref: '#/parameters/userLocation'
-      responses:
-        "200":
-          description: "Успех операции"
-          schema:
-            type: array
-            items:
-              $ref: "#/definitions/PaymentEntity"
-        "400":
-          description: "Ошибка при оплате"
-          schema:
-            type: array
-            items:
-              $ref: "#/definitions/PaymentErrorEntity"
-        "401":
-          description: "Переданный токен невалиден"
-      security:
+        - { }
         - userTokenSec: [ ]
 
   /ride-info:
     post:
+      deprecated: true
       tags:
         - "mt"
       summary: "Оповещение об изменениях в поездке"
@@ -463,39 +411,10 @@ paths:
           required: true
           schema:
             $ref: "#/definitions/RideEntity"
-      responses:
-        "200":
-          description: "Успех операции"
-
-  /payment-info:
-    post:
-      tags:
-        - "mt"
-      summary: "Оповещение об изменениях статуса платежа"
-      description: |
-        <p>Метод для оповещения статуса оплаты на стороне сервиса каршеринга.</p>
-        <p>Адрес метода: <b>POST https://carsharing.moscowtransport.app/payment</b></p>
-        <p>Метод вызывается каршеринг-сервисом в момент получения оплаты:
-          <ul>
-            <li>оплата поездки пользователем в приложении каршеринга;</li>
-            <li>оплата через приложение Московский Транспорт;</li>
-            <li>Ошибка оплаты через приложение Московский Транспорт;</li>
-          </ul>
-        </p>
-      operationId: "paymentNotification"
-      consumes:
-        - "application/json"
-      produces:
-        - "application/json"
-      parameters:
-        - in: "body"
-          name: "body"
-          description: "Данные оплаты"
-          required: true
-          schema:
-            type: array
-            items:
-              $ref: "#/definitions/RidePayment"
+        - $ref: '#/parameters/userLanguage'
+        - $ref: '#/parameters/userDevice'
+        - $ref: '#/parameters/userOsDevice'
+        - $ref: '#/parameters/userLocation'
       responses:
         "200":
           description: "Успех операции"
@@ -580,18 +499,6 @@ definitions:
         description: "Позиция пользователя в момент оформления заказа"
         $ref: "#/definitions/LocationDto"
 
-  PaymentDto:
-    type: object
-    properties:
-      token:
-        type: string
-        description: Платёжный токен b2p
-      payments:
-        type: array
-        description: ID платежей
-        items:
-          type: string
-
   RideCancelRequestDto:
     type: "object"
     required:
@@ -605,7 +512,7 @@ definitions:
     properties:
       confirmationRequestId:
         type: "string"
-        description: "ID запроса на отмену, который получен из метода /ride/{id}/cancel/request. Поле может быть null (см. описание метода /ride/{id}/cancel-request)"
+        description: "ID запроса на отмену, который получен из метода /ride/{id}/cancel/request. Поле не приходит, когда метод /ride/{id}/cancel-request отдаёт код 405, отправляется запрос с пустым json - {}"
 
   ActiveRideInfoEntity:
     type: "object"
@@ -686,7 +593,6 @@ definitions:
         type: "string"
         description: "Статус поездки"
         enum:
-          - booking
           - active
           - waiting
           - parking
@@ -711,10 +617,6 @@ definitions:
       id:
         description: "ID поездки"
         type: "string"
-      payments:
-        type: array
-        items:
-          $ref: '#/definitions/RidePayment'
       deepLink:
         type: "string"
         description: "Диплинк для перехода в приложение оператора каршеринга"
@@ -768,79 +670,12 @@ definitions:
         type: "string"
         description: "Статус поездки"
         enum:
-          - booking
           - active
           - parking
           - finished
           - canceling
           - canceled
           - inspection
-
-  RidePayment:
-    type: object
-    required:
-      - id
-      - amount
-      - status
-    properties:
-      id:
-        type: string
-        description: ID платежа
-      amount:
-        type: integer
-        description: Стоимость поездки в копейках
-      description:
-        type: string
-        description: Назначение платежа
-      error:
-        type: string
-        description: Текст ошибки оплаты #todo: возможно сделать enum по ошибкам b2p?
-      status:
-        type: string
-        enum:
-          - debt
-          - failed
-          - paid
-      date:
-        type: integer
-        description: Дата выставления платежа
-
-  PaymentEntity:
-    type: object
-    required:
-      - id
-      - status
-    properties:
-      id:
-        type: string
-        description: ID платежа
-      error:
-        type: string
-        description: Текст ошибки оплаты #todo: возможно сделать enum по ошибкам b2p?
-      status:
-        type: string
-        enum:
-          - pending
-          - paid
-          - failed
-
-  PaymentErrorEntity:
-    type: object
-    required:
-      - id
-      - status
-    properties:
-      id:
-        type: string
-        description: ID платежа
-      error:
-        type: string
-        description: Текст ошибки оплаты #todo: возможно сделать enum по ошибкам b2p?
-      status:
-        type: string
-        enum:
-          - failed
-          - pending
 
   RideCreatedEntity:
     type: "object"
@@ -934,15 +769,14 @@ definitions:
 
   RideCancelConfirmEntity:
     type: "object"
+    required:
+      - id
+      - message
     properties:
       id:
         type: "string"
         description: |
           <p>ID подтверждения отмены, который необходим отправить в метод /ride/{id}/cancel-confirm.</p>
-          <p>
-          Поле может быть null, если у оператора каршеринга нет необходимости о чём-то
-          предупредить пользователя при отмене брони. В этом случае будет вызван метод /ride/{id}/cancel-confirm с
-          пустым полем confirmationRequestId в запросе.</p>
       message:
         type: "string"
         description: "Сообщение, которое получит пользователь на подтверждающем экране при отмене брони. Поле может быть null, если у оператора каршеринга нет необходимости о чём-то предупредить пользователя при отмене брони."
@@ -1136,6 +970,9 @@ definitions:
 
   CarZonesSetEntity:
     type: object
+    required:
+      - setId
+      - setUpdatedAt
     properties:
       setId:
         type: "string"
@@ -1322,7 +1159,7 @@ definitions:
             <li>carNotFound - передан некорректный ID автомобиля;</li>
             <li>carAlreadyBooked - машина уже забронирована другим пользователем;</li>
             <li>userHasRide - у пользователя уже есть активная поездка или бронь;</li>
-            <li>depricatedPolicy - принятая пользователем оферта устарела;</li>
+            <li>deprecatedPolicy - принятая пользователем оферта устарела;</li>
             <li>userDebt - у пользователя есть задолженность;</li>
             <li>userBlocked - пользователь заблокирован;</li>
             <li>carNotAvailable - автомобиль недоступен для этого пользователя;</li>
@@ -1336,7 +1173,7 @@ definitions:
           - carAlreadyBooked
           - carNotAvailable
           - userHasRide
-          - depricatedPolicy
+          - deprecatedPolicy
           - userBlocked
           - userDebt
           - paymentError
