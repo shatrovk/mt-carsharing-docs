@@ -10,11 +10,33 @@ info:
     по токену b2p. В случае если попытка списания завершилась ошибкой, при завершении сессии платёж приходит в /ride/{id} в статусе debt, который будет запрошен при переходе сессии в статус <code>finished</code> или <code>canceled</code>.
     MT может попытаться оплатить задолженность другой картой b2p, передав ноый токен b2p в метод <code>POST /payment</code>. При этом можно указать оплату как одной, так и нескольких (либо всех) задолженностей.</p>
     <p>При загрузке профиля сервиса в приложении пользователем МТ будет запрашиваться список актуальных задолженностей с помощью метода `GET /debt`.
-    <p>API методы реализованные на стороне MT содержат методы, которые нужно выполнять сервису к серверу МТ в момент следующих событий:</p>
+    <h3>API методы на стороне МТ</h3>
+    <p>Данный документ также описывает API методы, который реализованы на стороне MT. Данные методы позволяют сервису каршеринга выполнять обращения к серверу МТ в момент следующих событий:</p>
     <ul><li><code>POST /ride-info</code> - создание и обновление статуса поездки, начатой из приложения МТ. На первом этапе можем реализовать 
-      только переход в статус canceled/finished.</li>
-    <li><code>POST /payment-info</code> - создание и обновление статуса платежа пользователя, созданного по переданному токену b2p.</li>
+      только переход в статус canceled/finished</li>
+    <li><code>POST /payment-info</code> - создание и обновление статуса платежа пользователя, созданного по переданному токену b2p</li>
+    <li><code>POST /receipt-info</code> - передача ссылки на электронный чек по платёжным операциям на стороне сервиса каршеринга</li>
     </ul>
+    
+    <h4>Логика резервации запросов</h4>
+    <p>
+    В случае получения не 200-го кода ответа от API МТ, следует совершать повторные попытки через экпоненциально увеличиваемый интервал времени (Exponential Backoff).
+    <ul>
+    <li>    Минимальный интервал повтора должен составлять 1 сек</li>
+    <li>    Максимальный интервал повтора должен быть равен 30 мин</li>
+    <li>        Коэффициент экпоненциального нарастания должен быть равен 2</li>
+    <li>            Jitter должен составлять 1 сек</li>
+    </ul>
+    
+    
+    
+    
+    Повторные попытки должны быть прекращены в случае выполнения одного из условий:
+    <ul>
+      <li>Получен 200-й код ответа</li>
+      <li>С момента возникновения события прошло больше 72 часов</li>
+    </ul>
+    </p>
   title: "MT + сервисы каршеринга"
   version: "1"
 tags:
@@ -523,6 +545,37 @@ paths:
         "200":
           description: "Успех операции"
 
+  /receipt-info:
+    post:
+      tags:
+        - "mt"
+      summary: "Передача электронного чека за выполненный платёж"
+      description: |
+        <p>Метод реализован на стороне серверной части МТ.</p>
+        <p>В метод передаётся информация о выбитом электронном чеке.</p>
+      operationId: "callbackReceipt"
+      consumes:
+        - "application/json"
+      produces:
+        - "application/json"
+      parameters:
+        - in: "body"
+          name: "body"
+          description: "Данные об электронном чеке"
+          required: true
+          schema:
+            $ref: "#/definitions/CallbackReceiptDto"
+        - $ref: '#/parameters/userLanguage'
+        - $ref: '#/parameters/userDevice'
+        - $ref: '#/parameters/userOsDevice'
+        - $ref: '#/parameters/userLocation'
+      responses:
+        "200":
+          description: "Успех операции"
+      security:
+        - userTokenSec: [ ]
+
+
 securityDefinitions:
   userTokenSec:
     type: "apiKey"
@@ -605,6 +658,16 @@ definitions:
       paymentToken:
         type: "string"
         description: Токен B2P для оплаты
+
+  CallbackReceiptDto:
+    type: object
+    properties:
+      url:
+        type: string
+        description: URL на электронный чек
+      paymentId:
+        type: string
+        description: ID платежа
 
   PaymentDto:
     type: object
@@ -818,6 +881,9 @@ definitions:
       id:
         type: string
         description: ID платежа
+      rideId:
+        type: string
+        description: ID поездки, если платёж касается конкретной поездки
       status:
         type: string
         enum:
