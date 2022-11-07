@@ -486,21 +486,15 @@ paths:
         - userTokenSec: [ ]
 
   /ride-info:
-    post:
+    patch:
       tags:
         - "mt"
       summary: "Оповещение об изменениях в поездке"
       description: |
         <p>Метод для оповещения изменении поездки на стороне сервиса каршеринга.</p>
-        <p>Адрес метода: <b>POST https://carsharing.moscowtransport.app/ride</b></p>
-        <p>Метод вызывается каршеринг-сервисом в момент изменения состояния поездки:
+        <p>Метод вызывается сервисом каршеринга в момент изменения состояния поездки:
           <ul>
-            <li>отмена поездки пользователем в приложении каршеринга;</li>
-            <li>начало поездки;</li>
-            <li>завершение поездки;</li>
-            <li>найден штраф по поездке;</li>
-            <li>оплачен штраф по поездке;</li>
-            <li>перевод автомобиля в режим ожидания.</li>
+            <li>изменение стоимости поездки после её завершения.</li>
           </ul>
         </p>
       operationId: "rideNotification"
@@ -514,7 +508,7 @@ paths:
           description: "Данные поездки"
           required: true
           schema:
-            $ref: "#/definitions/RideEntity"
+            $ref: "#/definitions/CallbackRideInfoDto"
       responses:
         "200":
           description: "Успех операции"
@@ -889,6 +883,19 @@ definitions:
         enum:
           - failed
           - paid
+
+  CallbackRideInfoDto:
+    type: object
+    required:
+      - id
+      - amount
+    properties:
+      id:
+        type: string
+        description: ID поездки
+      amount:
+        type: number
+        description: Общая стоимость поездки
 
   DebtListEntity:
     type: array
