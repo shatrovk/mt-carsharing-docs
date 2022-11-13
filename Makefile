@@ -3,5 +3,5 @@ json:
 
 image: json
 	export $$(cat .env.local | xargs) && \
-		docker build -t $$IMAGE_TAG . && \
+		docker build --platform=linux/amd64 -t $$IMAGE_TAG . && \
 		docker push $$IMAGE_TAG
