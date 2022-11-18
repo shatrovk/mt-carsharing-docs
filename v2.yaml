@@ -563,10 +563,6 @@ paths:
           required: true
           schema:
             $ref: "#/definitions/CallbackReceiptDto"
-        - $ref: '#/parameters/userLanguage'
-        - $ref: '#/parameters/userDevice'
-        - $ref: '#/parameters/userOsDevice'
-        - $ref: '#/parameters/userLocation'
       responses:
         "200":
           description: "Успех операции"
