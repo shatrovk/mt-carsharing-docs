@@ -650,6 +650,7 @@ definitions:
       - offerId
       - policyVersion
       - userLocation
+      - paymentToken
     properties:
       carId:
         type: "string"
