@@ -476,11 +476,9 @@ paths:
         - $ref: '#/parameters/userLocation'
       responses:
         "200":
-          description: "Успех операции"
+          description: "Задолженности и их статусы"
           schema:
-            type: array
-            items:
-              $ref: "#/definitions/PaymentEntity"
+            $ref: "#/definitions/DebtListEntity"
         "400":
           description: "Ошибка валидации списка платежей"
           schema:
@@ -568,9 +566,7 @@ paths:
           description: "Статус проведения платежа"
           required: true
           schema:
-            type: array
-            items:
-              $ref: "#/definitions/CallbackPaymentItemDto"
+            $ref: "#/definitions/CallbackPaymentsDto"
       responses:
         "200":
           description: "Успех операции"
@@ -899,6 +895,15 @@ definitions:
           - canceled
           - inspection
 
+  CallbackPaymentsDto:
+    type: object
+    properties:
+      payments:
+        type: array
+        items:
+          $ref: '#/definitions/CallbackPaymentItemDto'
+
+
   CallbackPaymentItemDto:
     type: object
     required:
@@ -926,6 +931,24 @@ definitions:
         enum:
           - failed
           - paid
+      timestamp:
+        type: integer
+        description: Дата изменения статуса
+      reason:
+        type: string
+        description: |
+          <p>Причина ошибки</p>
+          <p>Возможные коды:
+            <ul>
+              <li><b>declined</b> - отклонено (например <a href="https://b2p.support/technical_error/internal_error/oshibka-127/">Ошибка 127</a>)</li>
+              <li><b>invalid</b> - некорректные данные токена</li>
+              <li><b>system</b> - системная ошибка</li>
+            </ul>
+          </p>
+        enum:
+          - declined
+          - invalid
+          - system
 
   CallbackRideInfoDto:
     type: object
@@ -941,9 +964,12 @@ definitions:
         description: Общая стоимость поездки
 
   DebtListEntity:
-    type: array
-    items:
-      $ref: '#/definitions/PaymentEntity'
+    type: object
+    properties:
+      payments:
+        type: array
+        items:
+          $ref: '#/definitions/PaymentEntity'
 
   PaymentEntity:
     type: object
@@ -955,6 +981,9 @@ definitions:
       id:
         type: string
         description: ID платежа
+      rideId:
+        type: string
+        description: ID поездки
       amount:
         type: integer
         description: Сумма платежа в копейках
@@ -966,12 +995,27 @@ definitions:
           - processing
 
   PaymentErrorEntity:
-    type: object
+    type: "object"
     required:
-      - status
+      - errorCode
     properties:
-      status:
-        type: string
+      deepLink:
+        type: "string"
+        description: "Диплинк для перехода в приложение оператора каршеринга"
+      message:
+        type: "string"
+        description: |
+          Текст с описанием ошибки для пользователя. Следует использовать для несогласованных между МТ и оператором
+          каршеринга кодов ошибок. Текст без поддержки HTML тегов. На стороне оператора каршеринга текст следует
+          сформировать учитывая выбранный в приложении язык пользователя (передаётся в HTTP заголовке Accept-Language)
+      errorCode:
+        type: "string"
+        description: |
+          Код ошибки при бронировании автомобиля. Коды ошибок:
+          <ul>
+            <li>consistencyError - состав платежей или их сумма изменились;</li>
+            <li>other - другая ошибка, которую на данный момент не поддерживает логика МТ.</li>
+          </ul>
         enum:
           - consistencyError
           - other
