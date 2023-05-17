@@ -712,7 +712,7 @@ definitions:
         type: string
         description: ID платежа
       amount:
-        type: number
+        type: integer
         description: Сумма платежа в копейках
 
   RideCancelRequestDto:
@@ -961,7 +961,7 @@ definitions:
         description: ID поездки
       amount:
         type: number
-        description: Общая стоимость поездки
+        description: Общая стоимость поездки в копейках
 
   DebtListEntity:
     type: object
