@@ -482,9 +482,7 @@ paths:
         "400":
           description: "Ошибка валидации списка платежей"
           schema:
-            type: array
-            items:
-              $ref: "#/definitions/PaymentErrorEntity"
+            $ref: "#/definitions/PaymentErrorEntity"
         "401":
           description: "Переданный токен невалиден"
       security:
