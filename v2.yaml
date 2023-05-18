@@ -459,7 +459,7 @@ paths:
         <p>После проведения платежа через банковский процессинг, сервис каршеринга вызывает callback-метод <code>/debt-info</code,
         куда передаёт ID платежа и статус его оплаты.</p>
         <p>Метод должен поддерживать идемпотентность.</p>
-      operationId: "ridePayment"
+      operationId: "debtPayment"
       consumes:
         - "application/json"
       produces:
@@ -554,7 +554,7 @@ paths:
         <p>Метод реализован на стороне серверной части МТ.</p>
         <p>Метод принимает статус оплаты платежа на стороне сервиса каршеринга.</p>
         <p>В случае возврата МТ ожидает новый ID (не ID изначального платежа, от которого выполняется возврат).</p>
-      operationId: "paymentNotification"
+      operationId: "debtNotification"
       consumes:
         - "application/json"
       produces:
@@ -565,7 +565,7 @@ paths:
           description: "Статус проведения платежа"
           required: true
           schema:
-            $ref: "#/definitions/CallbackPaymentsDto"
+            $ref: "#/definitions/CallbackDebtsDto"
       responses:
         "200":
           description: "Успех операции"
@@ -702,7 +702,7 @@ definitions:
     required:
       - paymentToken
       - cardMask
-      - payments
+      - debts
     properties:
       paymentToken:
         type: string
@@ -907,8 +907,10 @@ definitions:
           - canceled
           - inspection
 
-  CallbackPaymentsDto:
+  CallbackDebtsDto:
     type: object
+    required:
+      - debts
     properties:
       debts:
         type: array
