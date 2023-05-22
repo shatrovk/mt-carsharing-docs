@@ -941,9 +941,10 @@ definitions:
           - pending
           - paid
           - processing
+          - canceled
       timestamp:
         type: integer
-        description: Дата изменения статуса
+        description: Дата изменения статуса в микросекундах
       reason:
         type: string
         description: |
@@ -972,6 +973,9 @@ definitions:
       amount:
         type: number
         description: Общая стоимость поездки в копейках
+      timestamp:
+        type: integer
+        description: Дата изменения стоимости в микросекундах
 
   DebtListEntity:
     type: object
