@@ -941,6 +941,7 @@ definitions:
           - pending
           - paid
           - processing
+          - canceled
       timestamp:
         type: integer
         description: Дата изменения статуса в микросекундах
