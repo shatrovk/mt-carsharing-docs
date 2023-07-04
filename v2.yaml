@@ -689,13 +689,21 @@ definitions:
 
   CallbackReceiptDto:
     type: object
+    required:
+      - url
     properties:
       url:
         type: string
         description: URL на электронный чек
       paymentId:
         type: string
-        description: ID платежа
+        description: Алиас debtId
+      debtId:
+        type: string
+        description: ID задолженности
+      rideId:
+        type: string
+        description: ID поездки
 
   PaymentDto:
     type: object
