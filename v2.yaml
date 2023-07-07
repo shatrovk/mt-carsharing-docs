@@ -704,6 +704,9 @@ definitions:
       rideId:
         type: string
         description: ID поездки
+      amount:
+        type: integer
+        description: Сумма чека, необходим если передан rideId и сумма чека отличается от суммы поездки
 
   PaymentDto:
     type: object
