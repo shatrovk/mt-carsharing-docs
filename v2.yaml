@@ -706,7 +706,7 @@ definitions:
         description: ID поездки
       amount:
         type: integer
-        description: Сумма чека, необходим если передан rideId и сумма чека отличается от суммы поездки
+        description: Сумма чека в копейках, необходим если передан rideId и сумма чека отличается от суммы поездки
       receipts:
         type: array
         items:
@@ -720,7 +720,7 @@ definitions:
               description: ID поездки
             amount:
               type: integer
-              description: Сумма чека, необходим если передан rideId и сумма чека отличается от суммы поездки
+              description: Сумма чека в копейках, необходим если передан rideId и сумма чека отличается от суммы поездки
 
   PaymentDto:
     type: object
@@ -955,8 +955,8 @@ definitions:
         type: string
         description: ID платежа. В случае возврата необходимо присылать новый ID.
       amount:
-        type: number
-        description: Сумма платежа
+        type: integer
+        description: Сумма платежа в копейках
       rideId:
         type: string
         description: ID поездки, если платёж касается конкретной поездки
